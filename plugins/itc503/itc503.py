@@ -7,6 +7,7 @@ import pyvisa
 from threading import Lock
 import random
 
+
 class itc503:
     def __init__(self):
         self.rm = pyvisa.ResourceManager()
@@ -49,6 +50,7 @@ class itc503:
             self.device.close()
         return 0
 
+    # testing forking
     def setT(self, temperature):
         """set the setpoint
 
@@ -82,7 +84,7 @@ class itc503:
             else:
                 temp = float(str[1:-2])
             return temp
-        
+
     def getDataTest(self):
         """get the data for testing and return it as a float
 
@@ -90,4 +92,3 @@ class itc503:
             temperature as a float
         """
         return random.uniform(10, 320)
-        
