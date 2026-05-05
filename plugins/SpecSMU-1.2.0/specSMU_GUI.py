@@ -459,7 +459,7 @@ class specSMU_GUI(QWidget):
             if raw_settings["channel"].lower() == "smua":
                 self.settings["drainchannel"] = "smub"
             else:
-                self.settings["drainchannel"] = "smua" # kinda hacky but should work
+                self.settings["drainchannel"] = "smua"  # kinda hacky but should work
 
             # Parse numeric fields
             self.settings["start"] = float(raw_settings["start"])
@@ -476,7 +476,6 @@ class specSMU_GUI(QWidget):
             self.settings["hwtrigpulse"] = float(raw_settings["hwtrigpulse"]) / 1000
             self.settings["prescaler"] = float(raw_settings["prescaler"])
             self.settings["timeafter"] = float(raw_settings["timeafter"]) / 1000
-
 
             if self.settings["hwtrigpulse"] < 0:
                 self._log_verbose("Value error in SpecSMU plugin: HW trigger pulse width can not be negative")
@@ -619,11 +618,11 @@ class specSMU_GUI(QWidget):
         trigpulse_dict["sense"] = True if self.settings["sourcesensemode"] == "4 wire" else False
         trigpulse_dict["type"] = "v" if self.settings["inject"] == "voltage" else "i"
         trigpulse_dict["value"] = smuSetValue
-        
+
         trigpulse_dict["drainvalue"] = self.settings["drainvalue"] if "drainvalue" in self.settings else 0
         trigpulse_dict["drainlimit"] = self.settings["drainlimit"] if "drainlimit" in self.settings else 0.0005
         trigpulse_dict["drain"] = self.settings["drainchannel"]
-        trigpulse_dict["usedrain"] = not(self.settings["singlechannel"])
+        trigpulse_dict["usedrain"] = not (self.settings["singlechannel"])
         trigpulse_dict["limit"] = self.settings["limit"]
         trigpulse_dict["spectro_check_after"] = self.settings["spectro_check_after"]
         trigpulse_dict["sourcenplc"] = self.settings["nplc"] * self.smu_settings["lineFrequency"]  # see page 552 of Keithley manual: 1 PLC = 20 ms for 50 Hz (nplc = time [s] * freq [Hz])
@@ -772,7 +771,9 @@ class specSMU_GUI(QWidget):
                 # HW trig mode
                 else:
                     # arm spectrometer
-                    self.function_dict["spectrometer"][spectro_name]["spectrometerSetIntegrationTime"](integration_time_setting)  # make sure that integration time is set, even if it is the same as before, to make sure that spectrometer is ready for the trigger
+                    self.function_dict["spectrometer"][spectro_name]["spectrometerSetIntegrationTime"](
+                        integration_time_setting
+                    )  # make sure that integration time is set, even if it is the same as before, to make sure that spectrometer is ready for the trigger
                     self.function_dict["spectrometer"][spectro_name]["spectrometerTrigScan"]()
                     time.sleep(0.02)  # just a precaution, duration does not mean anything specific, does not affect the measurement as smu is off
                     # make dict for smu, as we do not know if autotime was used
@@ -783,7 +784,7 @@ class specSMU_GUI(QWidget):
                     if status:
                         self._log_verbose(f"Error running smupulse: {info}")
                         raise NotImplementedError(f"Error in smu_trigpulse: {info}, no handling provided")
-                    time.sleep(2)  # probably not needed
+                    time.sleep(integration_time_setting + trigDict["timeafter"] + 0.5)  # probably not needed
 
                     # spectrum
                     status, spectrum = self.function_dict["spectrometer"][spectro_name]["spectrometerGetSpectrum"]()
@@ -805,7 +806,7 @@ class specSMU_GUI(QWidget):
                 if self.settings["mode"] == "hw trigger":
                     IVdata = self.function_dict["smu"][self.settings["smu"]]["smu_bufferRead"](trigDict["source"])
                     readings = ",".join(map(str, IVdata.ravel()))
-                    if not(self.settings["singlechannel"]):
+                    if not (self.settings["singlechannel"]):
                         IVdataDrain = self.function_dict["smu"][self.settings["smu"]]["smu_bufferRead"](trigDict["drain"])
                         readings += "," + ",".join(map(str, IVdataDrain.ravel()))
                     i_after, v_after = IVdata[-1]
