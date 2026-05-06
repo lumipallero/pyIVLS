@@ -51,6 +51,7 @@ class itc503GUI(QObject):
     arrayT = []
     arraytemp = []
     runningFlag = False
+
     ########Functions
     def __init__(self):
         super(itc503GUI, self).__init__()
@@ -80,20 +81,19 @@ class itc503GUI(QObject):
         self.settingsWidget.saveButton.clicked.connect(self._createFile)
         self.settingsWidget.stopLogButton.clicked.connect(self._closeThread)
 
-
     def _create_plt(self):
         self.sc = MplCanvas(self, width=5, height=4, dpi=100)
         self.axes = self.sc.fig.add_subplot(111)
         self.axes.set_xlabel("time (s)")
         self.axes.set_ylabel("Temperature (K)")
-        self.axes.set_ylim(0, 350) 
-        
-        #self.axes.text(0.9, 0.1, f'{self.arraytemp[-1]}', dict(size=20))
+        self.axes.set_ylim(0, 350)
+
+        # self.axes.text(0.9, 0.1, f'{self.arraytemp[-1]}', dict(size=20))
         layout = QVBoxLayout()
         layout.addWidget(self.sc._create_toolbar(self.MDIWidget))
         layout.addWidget(self.sc)
         self.MDIWidget.setLayout(layout)
-        #self._GUIchange_deviceConnected(True)
+        # self._GUIchange_deviceConnected(True)
 
     ########Functions
     ########GUI Slots
@@ -128,20 +128,15 @@ class itc503GUI(QObject):
     def _setTAction(self):
         [status, info] = self._parse_settings_setT()
         if status:
-            self.log_message.emit(
-                datetime.now().strftime("%H:%M:%S.%f") + f" : itc503 plugin : {info}, status = {status}"
-            )
+            self.log_message.emit(datetime.now().strftime("%H:%M:%S.%f") + f" : itc503 plugin : {info}, status = {status}")
             self.info_message.emit(f"itc503 plugin : {info}")
             return [status, info]
         [status, info] = self._setT()
         if status:
-            self.log_message.emit(
-                datetime.now().strftime("%H:%M:%S.%f") + f" : itc503 plugin : {info}, status = {status}"
-            )
+            self.log_message.emit(datetime.now().strftime("%H:%M:%S.%f") + f" : itc503 plugin : {info}, status = {status}")
             self.info_message.emit(f"itc503 plugin : {info}")
             return [status, info]
         return [0, "OK"]
-
 
     def _displayAction(self):
         """if self.timer.isActive():
@@ -170,9 +165,8 @@ class itc503GUI(QObject):
             self.run_thread = thread_with_exception(self._run_check)
             self.run_thread.start()
             self.runningFlag = True
-            
-            
-            #self._GUIchange_display(True)
+
+            # self._GUIchange_display(True)
 
     ########Functions
     ################################### internal
@@ -232,31 +226,12 @@ class itc503GUI(QObject):
 
         return [0, self.settings]
 
-
-
-
-
     def _run_check(self):
         self.arraytemp = []
         self.arrayT = []
         timeNow = time.time()
-        #timeDelta = 0  add in the future
-        points = int(self.settings["periodpts"]/self.settings["period"])
-        for i in range(points):
-            self.arraytemp.append(self.itc503.getData())
-            self.arrayT.append(time.time() - timeNow)
-            self._render_mdi()
-            time.sleep(self.settings["period"])
-        self.runningFlag = False
-        self._createFileLoop()
-        self.run_thread.thread_stop()
-    
-    def _run_check_long(self):
-        self.arraytemp = []
-        self.arrayT = []
-        timeNow = time.time()
-        #timeDelta = 0  add in the future
-        points = int(3600/self.settings["period"])
+        # timeDelta = 0  add in the future
+        points = int(self.settings["periodpts"] / self.settings["period"])
         for i in range(points):
             self.arraytemp.append(self.itc503.getData())
             self.arrayT.append(time.time() - timeNow)
@@ -266,7 +241,20 @@ class itc503GUI(QObject):
         self._createFileLoop()
         self.run_thread.thread_stop()
 
-    
+    def _run_check_long(self):
+        self.arraytemp = []
+        self.arrayT = []
+        timeNow = time.time()
+        # timeDelta = 0  add in the future
+        points = int(3600 / self.settings["period"])
+        for i in range(points):
+            self.arraytemp.append(self.itc503.getData())
+            self.arrayT.append(time.time() - timeNow)
+            self._render_mdi()
+            time.sleep(self.settings["period"])
+        self.runningFlag = False
+        self._createFileLoop()
+        self.run_thread.thread_stop()
 
     def _render_mdi(self):
         xmin, xmax = self.axes.get_xlim()
@@ -278,10 +266,9 @@ class itc503GUI(QObject):
         self.axes.plot(self.arrayT, self.arraytemp, "o")
         self.axes.set_xlim(xmin, xmax)
         self.axes.set_ylim(ymin, ymax)
-        self.axes.set_title(f'T = {self.arraytemp[-1]} K')
+        self.axes.set_title(f"T = {self.arraytemp[-1]} K")
         self.sc.draw()
         return [0]
-
 
     def _update_display(self):
         xmin, xmax = self.axes.get_xlim()
@@ -327,7 +314,7 @@ class itc503GUI(QObject):
         self.parse_settings_widget()
         fileheader = self._itcMakeHeader()
 
-        saveAddress = self.settingsWidget.addressLine.text() + os.path.sep + self.settingsWidget.fileNameLine.text()+".txt"
+        saveAddress = self.settingsWidget.addressLine.text() + os.path.sep + self.settingsWidget.fileNameLine.text() + ".txt"
         np.savetxt(
             saveAddress,
             list(zip(self.arrayT, self.arraytemp)),
@@ -338,6 +325,7 @@ class itc503GUI(QObject):
             footer="#[EndOfFile]",
             comments="#",
         )
+
     def _createFileLoop(self):
         fileheader = self._itcMakeHeader()
 
@@ -352,7 +340,6 @@ class itc503GUI(QObject):
             footer="#[EndOfFile]",
             comments="#",
         )
-        
 
     def _itcMakeHeader(self):
         ###following the structure of files generated by Thorlabs software
@@ -400,8 +387,6 @@ class itc503GUI(QObject):
         comment = f"{comment}#[Data]\n"
         return comment
 
-
-
     ########Functions
     ###############GUI setting up
 
@@ -433,7 +418,6 @@ class itc503GUI(QObject):
         self.settingsWidget.logCheckBox.setChecked(False)
         self.settingsWidget.logWholeBox.setChecked(False)
 
-
     def _setGUIfromSettings(self):
         ##populates GUI with values stored in settings
 
@@ -455,13 +439,9 @@ class itc503GUI(QObject):
 
     def _GUIchange_deviceConnected(self, status):
         if status:
-            self.settingsWidget.connectionIndicator.setStyleSheet(
-                "border-radius: 10px; background-color: rgb(38, 162, 105); min-height: 20px; min-width: 20px;"
-            )
+            self.settingsWidget.connectionIndicator.setStyleSheet("border-radius: 10px; background-color: rgb(38, 162, 105); min-height: 20px; min-width: 20px;")
         else:
-            self.settingsWidget.connectionIndicator.setStyleSheet(
-                "border-radius: 10px; background-color: rgb(165, 29, 45); min-height: 20px; min-width: 20px;"
-            )
+            self.settingsWidget.connectionIndicator.setStyleSheet("border-radius: 10px; background-color: rgb(165, 29, 45); min-height: 20px; min-width: 20px;")
         self.settingsWidget.settingsGroupBox.setEnabled(status)
         self.settingsWidget.DisplayGroupBox.setEnabled(status)
         self.settingsWidget.disconnectButton.setEnabled(status)
@@ -486,11 +466,7 @@ class itc503GUI(QObject):
         methods = {
             method: getattr(self, method)
             for method in dir(self)
-            if callable(getattr(self, method))
-            and not method.startswith("__")
-            and not method.startswith("_")
-            and method not in self.non_public_methods
-            and method in self.public_methods
+            if callable(getattr(self, method)) and not method.startswith("__") and not method.startswith("_") and method not in self.non_public_methods and method in self.public_methods
         }
         return methods
 
@@ -597,11 +573,11 @@ class itc503GUI(QObject):
 
     ########Functions
     ########Tsweep implementation
-# this is fork pull request test
+    # this is fork pull request test
     def getIterations(self):
         return self.settings["sweeppts"]
 
-    def loopingIteration(self, iteration):
+    """def loopingIteration(self, iteration):
         if self.runningFlag:
             self.run_thread.thread_stop()
             self._createFileLoop()
@@ -638,15 +614,13 @@ class itc503GUI(QObject):
                 self.run_thread = thread_with_exception(self._run_check)
                 self.run_thread.start()
             self.runningFlag = True
-        return [0, f"_{info}K"]
+        return [0, f"_{info}K"]"""
 
-    """def loopingIteration(self, iteration): # test
+    def loopingIteration(self, iteration):  # test
         if self.settings["sweeppts"] == 1:
             self.settings["sett"] = self.settings["sweepstart"]
         else:
-            self.settings["sett"] = self.settings["sweepstart"] + iteration * (
-                self.settings["sweepend"] - self.settings["sweepstart"]
-            ) / (self.settings["sweeppts"] - 1)
+            self.settings["sett"] = self.settings["sweepstart"] + iteration * (self.settings["sweepend"] - self.settings["sweepstart"]) / (self.settings["sweeppts"] - 1)
         # this function is called not from the main thread. Direct addressing of qt elements not from te main thread causes segmentation fault crash. Using a signal-slot interface between different threads should make it work
         #        self.settingsWidget.setTEdit.setText(f"{self.settings['sett']}")
         [status, info] = self._setT()
@@ -665,4 +639,4 @@ class itc503GUI(QObject):
             else:
                 print(datetime.now().strftime("%H:%M:%S.%f") + f" Stabilization period. T={info} K")
             time.sleep(20)
-        return [0, f"_{info}K"]"""
+        return [0, f"_{info}K"]
