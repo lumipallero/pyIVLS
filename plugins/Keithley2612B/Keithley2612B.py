@@ -744,7 +744,7 @@ class Keithley2612B:
                 else:
                     self.safewrite(f"{s['source']}.measure.delay = {s['delayduration']:.6f}")
                 nplc_s = s['nplcms']/1000 #change nplc time value from ms to seconds
-                if ["spectro_check_after"]:
+                if s["spectro_check_after"]:
                     if 2*(s['delayduration']+nplc_s+s['postwait'])>s['integrationtime']:
                         pulseduration = 2*(s['delayduration']+nplc_s+s['postwait'])
                     else:
@@ -790,9 +790,13 @@ class Keithley2612B:
                 #Configure digital I/O lineN to output a extPulse ms
                 ## according to THORLABD CCS p.65, the signal should be TTL, > 0.5 us, delay <8.25 us
                 ## as the signal is TTL let's consider it standard rising-edge trigger
+                self.safewrite(f"trigger.timer[4].delay = {s['delayduration']:.6f}") 
+                self.safewrite("trigger.timer[4].count = 1")
+                self.safewrite("trigger.timer[4].passthrough = false") ## if true the timer will trigger immediately after run
+                self.safewrite(f"trigger.timer[4].stimulus = {s['source']}.trigger.SOURCE_COMPLETE_EVENT_ID") 
                 self.safewrite(f"digio.trigger[{s['linen']}].mode = digio.TRIG_RISINGM") ### p.397 of Keithley manual: the only option for direct assertion
                 self.safewrite(f"digio.trigger[{s['linen']}].pulsewidth = {s['digiopulse']:.6f}")
-                self.safewrite(f"digio.trigger[{s['linen']}].stimulus = {s['source']}.trigger.SOURCE_COMPLETE_EVENT_ID")
+                self.safewrite(f"digio.trigger[{s['linen']}].stimulus = trigger.timer[4].EVENT_ID")
                 #Set appropriate counts of trigger model.
                 self.safewrite(f"{s['source']}.trigger.count = 1")
                 self.safewrite(f"{s['source']}.trigger.arm.count = 1")

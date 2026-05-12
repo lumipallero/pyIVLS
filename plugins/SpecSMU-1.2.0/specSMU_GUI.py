@@ -307,7 +307,6 @@ class specSMU_GUI(QWidget):
             "lineEdit_Points": "points",
             "lineEdit_Limit": "limit",
             "lineEdit_drainValue": "drainvalue",
-            "lineEdit_timeAfter": "timeafter",
         }
         for line_name, key in line_map.items():
             line_edit = getattr(self.settingsWidget, line_name, None)
@@ -326,6 +325,11 @@ class specSMU_GUI(QWidget):
         except:
             self.logger.log_warn("Setting GUI from settings conversion failed.delay is set as it is in settings")
             self.settingsWidget.lineEdit_Delay.setText(str(settings.get("delay", 0.32)))
+        try:
+            self.settingsWidget.lineEdit_timeAfter.setText(f"{float(settings.get('timeafter', 0.0)) * 1000}")
+        except:
+            self.logger.log_warn("Setting GUI from settings conversion failed.time_after is set as it is in settings")
+            self.settingsWidget.lineEdit_timeAfter.setText(str(settings.get("timeafter", 0.0)))
 
         # Set checkboxes
         def set_checkbox(cb_name: str, setting_key: str):
@@ -784,7 +788,7 @@ class specSMU_GUI(QWidget):
                     if status:
                         self._log_verbose(f"Error running smupulse: {info}")
                         raise NotImplementedError(f"Error in smu_trigpulse: {info}, no handling provided")
-                    time.sleep(integration_time_setting + trigDict["timeafter"] + 0.5)  # probably not needed
+                    time.sleep(2 * integration_time_setting + trigDict["timeafter"] + 0.5)  # probably not needed
 
                     # spectrum
                     status, spectrum = self.function_dict["spectrometer"][spectro_name]["spectrometerGetSpectrum"]()
