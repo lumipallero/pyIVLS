@@ -788,7 +788,7 @@ class specSMU_GUI(QWidget):
                     if status:
                         self._log_verbose(f"Error running smupulse: {info}")
                         raise NotImplementedError(f"Error in smu_trigpulse: {info}, no handling provided")
-                    time.sleep(2 * (integration_time_setting + 0.36 + trigDict["postwait"] + 0.5))  # probably not needed
+                    time.sleep(2 * (integration_time_setting + 1 + trigDict["postwait"]))  # probably not needed
 
                     # spectrum
                     status, spectrum = self.function_dict["spectrometer"][spectro_name]["spectrometerGetSpectrum"]()

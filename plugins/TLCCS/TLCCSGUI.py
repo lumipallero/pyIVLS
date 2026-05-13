@@ -599,7 +599,10 @@ class TLCCS_GUI(QObject):
                             return status, info
                     except TypeError:
                         self.log_verbose("getAutoTime: External action completed without standard return value")
-
+                if self.settings["externaltrigger"]:
+                    time.sleep(
+                        2 * (mydict["postwait"] + guessIntTime + 1)
+                    )  # to make sure that the smu finished all the operations, just a precaution, duration does not mean anything specific, does not affect the measurement as smu is off
                 [status, info] = self.spectrometerGetScan()
                 if status:
                     self.log_verbose(f"getAutoTime: Failed to update spectrum. {status}, {info}")
