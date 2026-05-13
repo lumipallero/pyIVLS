@@ -670,7 +670,7 @@ class Keithley2612B:
                 self.safewrite("reset()")
                 self.safewrite("beeper.enable=0")
                 self.safewrite("digio.writeport(0)")
-
+                self.safewrite("errorqueue.clear()")
                 ####set visualization
                 self.safewrite("display.screen = display.SMUA_SMUB")
                 self.safewrite("format.data = format.ASCII")
@@ -748,7 +748,7 @@ class Keithley2612B:
                         pulseduration = 2 * (s["delayduration"] + nplc_s + s["postwait"])
                     else:
                         pulseduration = s["integrationtime"] + s["postwait"]
-                    pulseduration = 2 * (s["delayduration"] + nplc_s + s["postwait"] + s["integrationtime"])
+                    pulseduration = 2 * (s["delayduration"] + nplc_s + s["postwait"] + s["integrationtime"] + s["timeafter"])
                     ###### trigger.timer[2] for the second IV measurement
                     self.safewrite(f"trigger.timer[2].delay = {(pulseduration - (s['delayduration'] + nplc_s + s['postwait'])):.6f}")  # duration of wait before second measurement in s
                     self.safewrite("trigger.timer[2].count = 1")
@@ -768,6 +768,7 @@ class Keithley2612B:
                         2 * s["integrationtime"] + s["postwait"] + nplc_s
                     )  # duration of the pulse in s, should be long enough to cover the measurement and postwait time for non-idealities in time synchronization
                 # Configure timer parameters to output a single pulseduration length pulse.
+                print(f"Calculated pulse duration: {pulseduration:.6f} s")
                 self.safewrite(f"trigger.timer[1].delay = {pulseduration:.6f}")  # set duration of pulse in seconds
                 self.safewrite("trigger.timer[1].count = 1")
                 self.safewrite("trigger.timer[1].passthrough = false")  ## if true the timer will trigger immediately after run
