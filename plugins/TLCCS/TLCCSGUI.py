@@ -601,7 +601,7 @@ class TLCCS_GUI(QObject):
                         self.log_verbose("getAutoTime: External action completed without standard return value")
                 if self.settings["externaltrigger"]:
                     time.sleep(
-                        2 * (mydict["postwait"] + guessIntTime + 1)
+                        2 * (mydict["postwait"] + guessIntTime + 2)
                     )  # to make sure that the smu finished all the operations, just a precaution, duration does not mean anything specific, does not affect the measurement as smu is off
                 [status, info] = self.spectrometerGetScan()
                 if status:

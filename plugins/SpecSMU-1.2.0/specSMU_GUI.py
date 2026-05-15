@@ -697,6 +697,16 @@ class specSMU_GUI(QWidget):
                             last_integration_time=last_integration_time,
                         )
                     elif self.settings["mode"] == "hw trigger":
+                        # "Abandon all hope, ye who enter here"
+                        status, auto_time = self.function_dict["spectrometer"][spectro_name]["getAutoTime"](
+                            external_action=self.function_dict["smu"][smu_name]["smu_outputON"],
+                            external_action_args=(self.settings["channel"],),
+                            external_cleanup=self.function_dict["smu"][smu_name]["smu_outputOFF"],
+                            pause_duration=self.settings["pause"],
+                            last_integration_time=last_integration_time,
+                        )
+
+                    """elif self.settings["mode"] == "hw trigger":
                         # hw trig mode mainly based on smu_trigpulse. Spectrometer plugin understands that it is in hw trig mode from externaltrigger setting
                         status, auto_time = self.function_dict["spectrometer"][spectro_name]["getAutoTime"](
                             external_action=self.function_dict["smu"][smu_name]["smu_trigpulse"],
@@ -704,7 +714,7 @@ class specSMU_GUI(QWidget):
                             external_cleanup=self.function_dict["smu"][smu_name]["smu_outputOFF"],
                             pause_duration=self.settings["pause"],
                             last_integration_time=last_integration_time,
-                        )
+                        )"""
 
                     # Depending on the branch, auto_time may be None if getAutoTime failed
                     if status == 0:
