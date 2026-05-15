@@ -575,7 +575,7 @@ class TLCCS_GUI(QObject):
                     self.logger.log_debug(f"getAutoTime: Failed to set integration time. {status}, {info}")
                     return (status, info)
                 # charging the spectrometer in case of external trigger
-                """if self.settings["externaltrigger"]:
+                if self.settings["externaltrigger"]:
                     self.logger.log_debug("Charging a new  HW trig scan.")
                     self.drv.start_scan_ext_trigger()
                     time.sleep(0.02)  # just a precaution, duration does not mean anything specific, does not affect the measurement as smu is off
@@ -585,7 +585,7 @@ class TLCCS_GUI(QObject):
                             {"Error message": "External action arguments are required for hardware trigger mode."},
                         )
                     mydict = external_action_args[0]
-                    mydict["integrationtime"] = guessIntTime  # in s"""
+                    mydict["integrationtime"] = guessIntTime  # in s
                 # external action if needed
                 if external_action:
                     self.log_verbose("getAutoTime: Executing external action.")
@@ -599,10 +599,8 @@ class TLCCS_GUI(QObject):
                             return status, info
                     except TypeError:
                         self.log_verbose("getAutoTime: External action completed without standard return value")
-                """if self.settings["externaltrigger"]:
-                    time.sleep(
-                        2 * (mydict["postwait"] + guessIntTime + 3)
-                    )  # to make sure that the smu finished """
+                if self.settings["externaltrigger"]:
+                    time.sleep(2 * (mydict["postwait"] + guessIntTime + 3))  # just a precaution, duration does not mean anything specific, does not affect the measurement as smu is off
                 [status, info] = self.spectrometerGetScan()
                 if status:
                     self.log_verbose(f"getAutoTime: Failed to update spectrum. {status}, {info}")

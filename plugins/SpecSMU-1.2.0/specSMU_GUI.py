@@ -697,16 +697,6 @@ class specSMU_GUI(QWidget):
                             last_integration_time=last_integration_time,
                         )
                     elif self.settings["mode"] == "hw trigger":
-                        # "Abandon all hope, ye who enter here"
-                        status, auto_time = self.function_dict["spectrometer"][spectro_name]["getAutoTime"](
-                            external_action=self.function_dict["smu"][smu_name]["smu_outputON"],
-                            external_action_args=(self.settings["channel"],),
-                            external_cleanup=self.function_dict["smu"][smu_name]["smu_outputOFF"],
-                            pause_duration=self.settings["pause"],
-                            last_integration_time=last_integration_time,
-                        )
-
-                    """elif self.settings["mode"] == "hw trigger":
                         # hw trig mode mainly based on smu_trigpulse. Spectrometer plugin understands that it is in hw trig mode from externaltrigger setting
                         status, auto_time = self.function_dict["spectrometer"][spectro_name]["getAutoTime"](
                             external_action=self.function_dict["smu"][smu_name]["smu_trigpulse"],
@@ -714,7 +704,7 @@ class specSMU_GUI(QWidget):
                             external_cleanup=self.function_dict["smu"][smu_name]["smu_outputOFF"],
                             pause_duration=self.settings["pause"],
                             last_integration_time=last_integration_time,
-                        )"""
+                        )
 
                     # Depending on the branch, auto_time may be None if getAutoTime failed
                     if status == 0:
@@ -798,7 +788,7 @@ class specSMU_GUI(QWidget):
                     if status:
                         self._log_verbose(f"Error running smupulse: {info}")
                         raise NotImplementedError(f"Error in smu_trigpulse: {info}, no handling provided")
-                    time.sleep(2 * (integration_time_setting + 1 + trigDict["postwait"]))  # probably not needed
+                    time.sleep(integration_time_setting + trigDict["postwait"] + trigDict["timeafter"] + 0.5)  # probably not needed
 
                     # spectrum
                     status, spectrum = self.function_dict["spectrometer"][spectro_name]["spectrometerGetSpectrum"]()
