@@ -585,6 +585,8 @@ class TLCCS_GUI(QObject):
                             {"Error message": "External action arguments are required for hardware trigger mode."},
                         )
                     mydict = external_action_args[0]
+                    print(mydict)
+                    print(guessIntTime)
                     mydict["integrationtime"] = guessIntTime  # in s
                 # external action if needed
                 if external_action:
