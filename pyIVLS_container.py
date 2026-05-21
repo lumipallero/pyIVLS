@@ -188,7 +188,7 @@ class pyIVLS_container(QObject):
             self.config.write(configfile)
 
     @pyqtSlot(str)
-    def update_config_file(self, config_path: str) -> None:
+    def import_config_file(self, config_path: str) -> None:
         """Updates the config file with the given path. This is called from the plugin loader to update the config file.
 
         Args:

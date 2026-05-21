@@ -35,7 +35,7 @@ class pyIVLS_GUI(QObject):
     ############################### Signals
 
     # signal plugincontainer to read new config file
-    update_config_signal = pyqtSignal(str)
+    import_config_signal = pyqtSignal(str)
     export_config_signal = pyqtSignal(str)  # parameter: path to save to
 
     ############################### Slots
@@ -157,7 +157,7 @@ class pyIVLS_GUI(QObject):
             self.window, "Select Configuration File", self.path, "Configuration Files (*.ini)", options=QFileDialog.Option.DontUseNativeDialog | QFileDialog.Option.ReadOnly
         )
         if path:
-            self.update_config_signal.emit(path)
+            self.import_config_signal.emit(path)
 
     def action_export_config_file(self) -> None:
         """Prompts user to select a configuration file through QFileDialog. Path emitted as signal(str)"""

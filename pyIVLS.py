@@ -13,8 +13,6 @@ from pyIVLS_container import pyIVLS_container
 from pyIVLS_GUI import pyIVLS_GUI
 
 
-
-
 ###################################### slots
 @pyqtSlot()
 def update_settings_widget():
@@ -72,31 +70,35 @@ if __name__ == "__main__":
     GUI_mainWindow.pluginloader.update_config_signal.connect(pluginsContainer.update_config)
     pluginsContainer.available_plugins_signal.connect(GUI_mainWindow.pluginloader.populate_list)
     GUI_mainWindow.pluginloader.register_plugins_signal.connect(pluginsContainer.update_registration)
+    # signals to the main window 
     pluginsContainer.plugins_updated_signal.connect(update_settings_widget)
-
     pluginsContainer.show_message_signal.connect(GUI_mainWindow.show_message)
-
     pluginsContainer.log_message.connect(GUI_mainWindow.addDataLog)
+
+    # connect signals for seqbuilder
     GUI_mainWindow.seqBuilder.info_message.connect(GUI_mainWindow.show_message)
     GUI_mainWindow.seqBuilder.log_message.connect(GUI_mainWindow.addDataLog)
-
-    GUI_mainWindow.window.actionWrite_settings_to_file.triggered.connect(pluginsContainer.save_settings)
-    GUI_mainWindow.update_config_signal.connect(pluginsContainer.update_config_file)
-    GUI_mainWindow.export_config_signal.connect(pluginsContainer.export_config_file)
-    pluginsContainer.register_start_up()
-
-    update_settings_widget()
-
-
     pluginsContainer.seqComponents_signal.connect(GUI_mainWindow.seqBuilder.getPluginFunctions)
 
-    pluginsContainer.public_function_exchange()
-    ### init interfaces
-    whatAmI = pluginsContainer.get_plugin_info_for_settingsGUI()
-    GUI_mainWindow.setSettingsWidget(whatAmI)
-    GUI_mainWindow.setMDIArea(pluginsContainer.get_plugin_info_for_MDIarea())
+    # connect main window action signals to container
+    GUI_mainWindow.window.actionWrite_settings_to_file.triggered.connect(pluginsContainer.save_settings)
+    GUI_mainWindow.import_config_signal.connect(pluginsContainer.import_config_file)
+    GUI_mainWindow.export_config_signal.connect(pluginsContainer.export_config_file)
 
+    # register plugins
+    pluginsContainer.register_start_up()
+
+    # This hooks the available GUIs and sets them to the main window. It also connects logging, closelock, info signals.
+    update_settings_widget()
+
+    # exchange public methods between plgs.
+    pluginsContainer.public_function_exchange()
+
+    # show main window, which owns all GUI widgets
     GUI_mainWindow.window.show()
 
+    # write config to file after startup if config valid. This is done to update the file if incomplete plugins resulted in an incomplete config file.
     pluginsContainer.cleanup()
+
+    # start event loop
     sys.exit(app.exec())
