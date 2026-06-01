@@ -241,10 +241,11 @@ class pyIVLS_seqBuilder(QObject):
             try:
                 ret = plugin_functions["setSettings"](saved_settings)
                 if isinstance(ret, tuple) and ret[0] != 0:
-                    print(ret)
                     return False, f"Error sending settings to {instruction_func}: {ret[1]}"
             except Exception as e:
                 return False, f"Error sending settings to {instruction_func}: {str(e)}"
+        else:
+            return False, f"setSettings is not implemented for {instruction_func}."
 
         if "set_gui_from_settings" in plugin_functions:
             try:
@@ -329,7 +330,6 @@ class pyIVLS_seqBuilder(QObject):
         if not is_valid_filename(filename):
             self.info_message.emit("Can not save sequence. Filename is invalid.")
             return 1
-        print("Saving recipe to " + self.widget.lineEdit_path.text() + sep + filename)
         with open(self.widget.lineEdit_path.text() + sep + filename, "w") as file:
             json.dump(
                 self.extract_data(self.model.invisibleRootItem().child(0)),
@@ -431,7 +431,6 @@ class pyIVLS_seqBuilder(QObject):
         if self._is_in_ancestry(self.item, instructionFunc) or self.item.text() == instructionFunc:
             self.info_message.emit("Cannot add a plugin that already exists in its ancestry or as a direct child")
             return 1
-        print(f"selected instruction: {instructionFunc}, available: {self.available_instructions}")
         status, instructionSettings = self.available_instructions[instructionFunc]["functions"]["parse_settings_widget"]()
         if status:
             self.info_message.emit(instructionSettings["Error message"])
@@ -564,7 +563,6 @@ class pyIVLS_seqBuilder(QObject):
         finally:
             self._setNotRunning()
             self._sigSeqEnd.emit()
-
 
     def _runAction(self):
         # disable controls

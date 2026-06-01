@@ -218,6 +218,17 @@ class PyIVLSReturnCode(Enum):
     THREAD_STOPPED = 5
 
 
+class PyIVLSRetCo(Enum):
+    """Standard return codes for pyIVLS plugins."""
+
+    OK = 0
+    VALUE_E = 1
+    E_IN_DEP = 2
+    MISS_DEP = 3
+    HW_E = 4
+    TS = 5
+
+
 class FileManager:
     """Component that builds standard file headers for plugins. Provides headers for standard IV and standard spectro."""
 

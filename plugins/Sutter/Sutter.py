@@ -55,8 +55,7 @@ class Mpc325:
     _MINIMUM_MS: Final = 0
     _MAXIMUM_M: Final = 25000
     _MAXIMUM_S: Final = 400000
-    _TIMEOUT: Final = 3  
-
+    _TIMEOUT: Final = 3
 
     def __init__(self):
         # vars for a single instance
@@ -64,7 +63,6 @@ class Mpc325:
         # Initialize settings:
         self._comm_lock = threading.Lock()
         self.end_marker_bytes = struct.pack("<B", 13)  # End marker (ASCII: CR)
-
 
     def read(self, size: int) -> bytes:
         """Read a specified number of bytes from the serial port.
@@ -92,7 +90,7 @@ class Mpc325:
             time.sleep(0.4)
         return bytes_read
         """
-        
+
     def open(self, port: Optional[str] = None):
         with self._comm_lock:
             # Open port
@@ -170,7 +168,7 @@ class Mpc325:
         with self._comm_lock:
             self._flush()
             self.ser.write(bytes([75]))  # Send command to the device (ASCII: K)
-            output = self.read(4) # Expecting 4 bytes back: 1 byte for active device number, 2 bytes for FW version, 1 byte for end marker
+            output = self.read(4)  # Expecting 4 bytes back: 1 byte for active device number, 2 bytes for FW version, 1 byte for end marker
             unpacked = self._validate_and_unpack("4B", output, name="get_active_device")
             return unpacked[0]
 
@@ -189,7 +187,7 @@ class Mpc325:
                 raise ValueError(f"Device number {dev_num} is out of range. Must be between 1 and 4.")
             command = struct.pack("<2B", 73, dev_num)
             self.ser.write(command)  # Send command to the device (ASCII: I )
-            output = self.read(2) # Expecting 2 bytes back: 1 byte for active device number, 1 byte for end marker
+            output = self.read(2)  # Expecting 2 bytes back: 1 byte for active device number, 1 byte for end marker
             unpacked = self._validate_and_unpack("2B", output, name="change_active_device")
             # check that the device is available and active
             if unpacked[0] != dev_num:
@@ -205,7 +203,7 @@ class Mpc325:
         with self._comm_lock:
             self._flush()
             self.ser.write(bytes([67]))  # Send command (ASCII: C)
-            output = self.read(14) # Expecting 14 bytes back: 1 byte drv number 3*4 bytes for x,y,z positions in microsteps, 1 byte for end marker
+            output = self.read(14)  # Expecting 14 bytes back: 1 byte drv number 3*4 bytes for x,y,z positions in microsteps, 1 byte for end marker
             unpacked = self._validate_and_unpack("=BIIIB", output, name="get_current_position")
             return (self._s2m(unpacked[1]), self._s2m(unpacked[2]), self._s2m(unpacked[3]))
 
@@ -219,18 +217,16 @@ class Mpc325:
                 self.ser.timeout = self._TIMEOUT * 10
                 self._flush()
                 self.ser.write(bytes([78]))  # Send command (ASCII: N)
-                output = self.read(1) # Expecting 1 byte back: end marker 
+                output = self.read(1)  # Expecting 1 byte back: end marker
                 self._validate_and_unpack("<B", output, name="calibrate")  # Just to validate the end marker
                 self.ser.timeout = self._TIMEOUT  # reset timeout to default
                 return True
 
-
     def stop(self):
         """Stop the current movement"""
         self.ser.write(struct.pack("<B", 0x03))
-        
-    
-    def move(self, x=None, y=None, z=None, quick_move=True, speed=7, segment=True, segment_length = 500):
+
+    def move(self, x=None, y=None, z=None, quick_move=True, speed=7, segment=True, segment_length=500):
         """Move to a position. If quick_move is set to True, the movement will be at full speed.
 
         Args:
@@ -240,6 +236,7 @@ class Mpc325:
             quick_move (bool, optional): Whether to use quick move or slow move. Defaults to True.
             speed (int, optional): Speed for slow move in range 0-15. Defaults to 7.
         """
+
         def _interal_move(x, y, z, quick_move, speed):
             if quick_move:
                 self.quick_move_to(x, y, z)
@@ -259,7 +256,7 @@ class Mpc325:
         if (curr_pos[0] == self._handrail_micron(x)) and (curr_pos[1] == self._handrail_micron(y)) and (curr_pos[2] == self._handrail_micron(z)):
             return
         # for moves, add more generous timeout since they really do take a while.
-        self.ser.timeout = self._TIMEOUT * 10 
+        self.ser.timeout = self._TIMEOUT * 10
         if segment:
             segments = self.segment_move(curr_pos, (x, y, z), length=segment_length)
             for segment_target in segments:
@@ -267,8 +264,6 @@ class Mpc325:
         else:
             _interal_move(x, y, z, quick_move, speed)
         self.ser.timeout = self._TIMEOUT  # reset timeout to default
-
-
 
     def quick_move_to(self, x: np.float64, y: np.float64, z: np.float64):
         """Quickmove orthogonally at full speed.
@@ -307,7 +302,8 @@ class Mpc325:
         self._flush()
 
         # Enforce speed limits
-        speed = max(0, min(speed, 15))
+        if speed > 15 or speed < 0:
+            raise ValueError(f"Speed {speed} is out of range. Must be between 0 and 15.")
         # Pack first part of command
         command1 = struct.pack("<2B", 83, speed)
         # check bounds for coordinates and convert to microsteps. Makes really *really* sure that the values are good.
@@ -321,8 +317,6 @@ class Mpc325:
         self.ser.write(command2)
         byt = self.read(1)  # Expecting 1 byte back: end marker
         self._validate_and_unpack("<B", byt, name="slow_move_to")  # Just to validate the end marker
-
-
 
     # Handrails for microns/microsteps. Realistically would be enough just to check the microsteps, but CATCH ME LETTING A MISTAKE BREAK THESE
     def _handrail_micron(self, microns: np.float64) -> np.float64:
@@ -338,9 +332,9 @@ class Mpc325:
     # Function to convert microsteps to microns.
     def _s2m(self, steps: np.uint32) -> np.float64:
         return np.float64(steps * self._S2MCONV)
-    
+
     # Segmenter
-    def segment_move(self, current_position:tuple, target_position:tuple, length:int) -> list[tuple]:
+    def segment_move(self, current_position: tuple, target_position: tuple, length: int) -> list[tuple]:
         """Break up a move into segments of specified length.
 
         Args:
@@ -362,4 +356,3 @@ class Mpc325:
             segment_target = current_position + direction_vector * min(i * length, total_distance)
             segments.append(tuple(segment_target))
         return segments
-
