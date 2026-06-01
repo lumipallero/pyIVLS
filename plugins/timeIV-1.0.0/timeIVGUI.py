@@ -490,9 +490,9 @@ class timeIVGUI(QObject):
 
     def _source_inject_changed(self, index):
         """Changes the unit labels based on the selected injection type."""
-
+        print("source inject changed")
         inject_type = self.settingsWidget.comboBox_inject.currentText()
-        if inject_type == "Voltage":
+        if inject_type == "voltage":
             self.settingsWidget.label_sourceSetValue.setText("U")
             self.settingsWidget.label_sourceSetValueUnits.setText("V")
             self.settingsWidget.label_sourceLimitUnits.setText("A")
@@ -503,9 +503,9 @@ class timeIVGUI(QObject):
 
     def _drain_inject_changed(self, index):
         """Changes the unit labels based on the selected injection type."""
-
+        print("drain inject changed")
         inject_type = self.settingsWidget.comboBox_drainInject.currentText()
-        if inject_type == "Voltage":
+        if inject_type == "voltage":
             self.settingsWidget.label_drainSetValue.setText("U")
             self.settingsWidget.label_drainSetValueUnits.setText("V")
             self.settingsWidget.label_drainLimitUnits.setText("A")
