@@ -875,12 +875,14 @@ class timeIVGUI(QObject):
 
     def _timeIVimplementation(self):
         self.logger.log_debug("_timeIVimplementation: Creating file header.")
-        header = self.create_file_header(self.settings, self.smu_settings)
 
         self.logger.log_debug("_timeIVimplementation: Initializing SMU.")
         [status, message] = self.smuInit()
         if status:
             raise timeIVexception(f"{message['Error message']}")
+
+        # moved header creation to after smu init so that Line freq is actually available.
+        header = self.create_file_header(self.settings, self.smu_settings)
 
         self.logger.log_debug("_timeIVimplementation: Turning off SMU output.")
         self.function_dict["smu"][self.settings["smu"]]["smu_outputOFF"]()

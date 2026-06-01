@@ -241,7 +241,7 @@ class Keithley2612BGUI(QObject):
 
         # Determine a HighC mode for drain: may be True or False
         self.settings["drainhighc"] = self.settingsWidget.checkBox_drainHighC.isChecked()
-        if "lineFrequency" not in self.settings:
+        if "lineFrequency" not in self.settings or self.settings["lineFrequency"] == 0:
             try:
                 self.smu_connect()
                 info = self.smu.getLineFrequency()
