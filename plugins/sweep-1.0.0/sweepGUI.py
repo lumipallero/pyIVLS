@@ -845,6 +845,8 @@ class sweepGUI(QObject):
             except Exception as e:
                 self.logger.log_error(datetime.now().strftime("%H:%M:%S.%f") + f" : sweep plugin: smu turn off failed because of unexpected exception: {e}")
                 self.logger.info_popup("SMU turn off failed. Check log")
+            finally:
+                self.set_running(False)
             self.set_running(False)
             self.function_dict["smu"][self.settings["smu"]]["set_running"](False)
 
