@@ -52,7 +52,9 @@ def create_file_header(settings, smu_settings, backVoltage=None):
             comment = f"{comment}Measurement stabilization period is done in AUTO mode\n#"
         else:
             comment = f"{comment}Measurement stabilization period is{settings['pulseddelay'] / 1000} ms\n#"
-        comment = f"{comment}NPLC value {settings['pulsednplc'] * 1000} ms (for detected line frequency {smu_settings['lineFrequency']} Hz is {settings['pulsednplc']*smu_settings['lineFrequency']})\n#"
+        comment = (
+            f"{comment}NPLC value {settings['pulsednplc'] * 1000} ms (for detected line frequency {smu_settings['lineFrequency']} Hz is {settings['pulsednplc'] * smu_settings['lineFrequency']})\n#"
+        )
 
     comment = f"{comment}\n#"
     if settings["mode"] == "continuous":
@@ -67,7 +69,6 @@ def create_file_header(settings, smu_settings, backVoltage=None):
         comment = f"{comment}Limit for continuous operation arm {settings['continuouslimit']} {limitunit}\n#"
         comment = f"{comment}Start value for continuous operation arm {settings['continuousstart']} {stepunit}\n#"
         comment = f"{comment}End value for continuous operation arm {settings['continuousend']} {stepunit}\n#"
-
 
     if backVoltage is not None:
         comment = f"{comment}Back voltage set to drain is {backVoltage} V\n#"
@@ -138,7 +139,15 @@ def create_sweep_reciepe(settings, settings_smu):
     sensesteps :int number of sense steps 2w/4w
     modesteps: int number of steps for continuous/pulse
     """
+
     #### create measurement reciepe (i.e. settings and steps to measure)
+    def guardrail_nplc(nplc_seconds, line_frequency):
+        nplc = nplc_seconds * line_frequency
+        if nplc > 25:
+            nplc = 25
+            print(f"NPLC value is too high, setting to 25 PLC to avoid errors. NPLC was set to {nplc_seconds} seconds, which corresponds to {nplc} PLC at line frequency {line_frequency} Hz.")
+        return nplc
+
     recipe = []
     s = {}
     # making a template for modification
@@ -152,11 +161,11 @@ def create_sweep_reciepe(settings, settings_smu):
         s["sourcefiltertype"] = "FILTER_REPEAT_AVG"
         s["sourcefiltervalue"] = settings_smu["sourcefiltervalue"]
     else:
-    #settings_smu["drainfiltertype"] == "Off":
+        # settings_smu["drainfiltertype"] == "Off":
         s["sourcefiltertype"] = "FILTER_OFF"
     s["sourcedelayfactor"] = settings_smu["sourcedelayfactor"]
-    s["drainnplc"] = settings["drainnplc"] * settings_smu["lineFrequency"] #see page 552 of Keithley manual: 1 PLC = 20 ms for 50 Hz (nplc = time [s] * freq [Hz])
-    #s["drainnplc"] = settings["drainnplc"]  # drain NPLC (may not be used in single channel mode)
+    s["drainnplc"] = guardrail_nplc(settings["drainnplc"], settings_smu["lineFrequency"])  # see page 552 of Keithley manual: 1 PLC = 20 ms for 50 Hz (nplc = time [s] * freq [Hz])
+    # s["drainnplc"] = settings["drainnplc"]  # drain NPLC (may not be used in single channel mode)
     s["draindelay"] = settings["draindelaymode"]  # stabilization time before measurement for drain channel: may take values [auto, manual] (may not be used in single channel mode)
     s["draindelayduration"] = settings["draindelay"]  # stabilization time duration if manual (may not be used in single channel mode)
     s["drainlimit"] = settings["drainlimit"]  # limit for current in voltage mode or for voltage in current mode (may not be used in single channel mode)
@@ -166,7 +175,7 @@ def create_sweep_reciepe(settings, settings_smu):
         s["drainfiltertype"] = "FILTER_REPEAT_AVG"
         s["drainfiltervalue"] = settings_smu["drainfiltervalue"]
     else:
-    #settings_smu["drainfiltertype"] == "Off":
+        # settings_smu["drainfiltertype"] == "Off":
         s["drainfiltertype"] = "FILTER_OFF"
     s["draindelayfactor"] = settings_smu["draindelayfactor"]
     if settings["singlechannel"]:
@@ -204,7 +213,7 @@ def create_sweep_reciepe(settings, settings_smu):
             s["drainsense"] = loopsensedrain[sensecnt]  # drain sence mode: may take values [True - 4 wire, False - 2 wire]
             if not (settings["mode"] == "pulsed"):
                 s["pulse"] = False  # set pulsed mode: may be True - pulsed, False - continuous
-                s["sourcenplc"] = settings["continuousnplc"] * settings_smu["lineFrequency"]#see page 552 of Keithley manual: 1 PLC = 20 ms for 50 Hz (nplc = time [s] * freq [Hz])
+                s["sourcenplc"] = guardrail_nplc(settings["continuousnplc"], settings_smu["lineFrequency"])  # see page 552 of Keithley manual: 1 PLC = 20 ms for 50 Hz (nplc = time [s] * freq [Hz])
                 s["delay"] = settings["continuousdelaymode"]  # stabilization time mode for source: may take values [True - Auto, False - manual]
                 s["delayduration"] = settings["continuousdelay"]  # stabilization time duration if manual
                 s["steps"] = settings["continuouspoints"]  # number of points in sweep
@@ -214,7 +223,7 @@ def create_sweep_reciepe(settings, settings_smu):
                 recipe.append(copy.deepcopy(s))
             if not (settings["mode"] == "continuous"):
                 s["pulse"] = True  # set pulsed mode: may be True - pulsed, False - continuous
-                s["sourcenplc"] = settings["pulsednplc"] * settings_smu["lineFrequency"]#see page 552 of Keithley manual: 1 PLC = 20 ms for 50 Hz (nplc = time [s] * freq [Hz])
+                s["sourcenplc"] = guardrail_nplc(settings["pulsednplc"], settings_smu["lineFrequency"])  # see page 552 of Keithley manual: 1 PLC = 20 ms for 50 Hz (nplc = time [s] * freq [Hz])
                 s["delay"] = settings["pulseddelaymode"]  # stabilization time mode for source: may take values [True - Auto, False - manual]
                 s["delayduration"] = settings["pulseddelay"]  # stabilization time duration if manual
                 s["steps"] = settings["pulsedpoints"]  # number of points in sweep
@@ -226,7 +235,7 @@ def create_sweep_reciepe(settings, settings_smu):
     return [recipe, loopdrain, len(loopsensesource), 2 if settings["mode"] == "mixed" else 1]
 
 
-def prescaler_stop_check(recipe: dict, settings: dict, lastV: float, lastI: float)-> bool:
+def prescaler_stop_check(recipe: dict, settings: dict, lastV: float, lastI: float) -> bool:
     """
     A function that checks if the prescaler stop flag is set
     returns True if stop flag is set, False otherwise
@@ -239,5 +248,3 @@ def prescaler_stop_check(recipe: dict, settings: dict, lastV: float, lastI: floa
         return abs(lastV) > settings["prescaler"] * abs(recipe["limit"])
     else:
         raise ValueError("Unknown source type in prescaler stop check")
-
-                
