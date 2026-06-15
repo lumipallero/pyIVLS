@@ -214,6 +214,11 @@ def create_sweep_reciepe(settings, settings_smu):
             if not (settings["mode"] == "pulsed"):
                 s["pulse"] = False  # set pulsed mode: may be True - pulsed, False - continuous
                 s["sourcenplc"] = guardrail_nplc(settings["continuousnplc"], settings_smu["lineFrequency"])  # see page 552 of Keithley manual: 1 PLC = 20 ms for 50 Hz (nplc = time [s] * freq [Hz])
+                if settings["continuousdelaymode"] == "auto":
+                    s["delay"] = True  # stabilization time mode for source: may take values [True - Auto, False - manual]
+                else:
+                    s["delay"] = False  # stabilization time mode for source: may take values [True - Auto, False - manual]
+
                 s["delay"] = settings["continuousdelaymode"]  # stabilization time mode for source: may take values [True - Auto, False - manual]
                 s["delayduration"] = settings["continuousdelay"]  # stabilization time duration if manual
                 s["steps"] = settings["continuouspoints"]  # number of points in sweep
@@ -225,6 +230,11 @@ def create_sweep_reciepe(settings, settings_smu):
                 s["pulse"] = True  # set pulsed mode: may be True - pulsed, False - continuous
                 s["sourcenplc"] = guardrail_nplc(settings["pulsednplc"], settings_smu["lineFrequency"])  # see page 552 of Keithley manual: 1 PLC = 20 ms for 50 Hz (nplc = time [s] * freq [Hz])
                 s["delay"] = settings["pulseddelaymode"]  # stabilization time mode for source: may take values [True - Auto, False - manual]
+                if settings["pulseddelaymode"] == "auto":
+                    s["delay"] = True  # stabilization time mode for source: may take values [True - Auto, False - manual]
+                else:
+                    s["delay"] = False  # stabilization time mode for source: may take values [True - Auto, False - manual]
+                print(f"Delay mode for pulsed sweep is {s['delay']}, with datatype {type(s['delay'])}")
                 s["delayduration"] = settings["pulseddelay"]  # stabilization time duration if manual
                 s["steps"] = settings["pulsedpoints"]  # number of points in sweep
                 s["start"] = settings["pulsedstart"]  # start point of sweep
