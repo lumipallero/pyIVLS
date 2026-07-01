@@ -23,6 +23,17 @@ import pandas as pd
 
 
 class specTimeIVGUI:
+    # public and nonpublic methods
+    non_public_methods = []  # add function names here, if they should not be exported as public to another plugins
+
+    public_methods = [
+        "parse_settings_widget",
+        "sequenceStep",
+        "setSettings",
+        "set_gui_from_settings",
+    ]  # add function names here, necessary for descendents of QObject, otherwise _get_public_methods returns a lot of QObject methods
+    ########Signals
+
     ########Functions
     def __init__(self):
         # List of functions from another plugins required for functioning
