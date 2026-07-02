@@ -301,14 +301,82 @@ class specTimeIVGUI:
     ###############GUI setting up
     def _initGUI(
         self,
-        plugin_settings: dict[str, str | float | bool],
+        plugin_info,
     ):
         ##settings are not initialized here, only GUI
         ## i.e. no settings checks are here. Practically it means that anything may be used for initialization (var types still should be checked), but functions should not work if settings are not OK
-        self.logger.log_debug("Initializing GUI with plugin_settings: " + str(plugin_settings))
-        self.setSettings(plugin_settings)  # Update settings with plugin_settings
+        self.logger.log_debug("Initializing GUI with plugin_info: " + str(plugin_info))
+        self.settingsWidget.lineEdit_path.setText(plugin_info["address"])
+        self.settingsWidget.lineEdit_filename.setText(plugin_info["filename"])
+        self.settingsWidget.lineEdit_sampleName.setText(plugin_info["samplename"])
+        self.settingsWidget.lineEdit_comment.setText(plugin_info["comment"])
 
-        self.set_gui_from_settings()  # update to the correct GUI state
+        self.settingsWidget.step_lineEdit.setText(plugin_info["timestep"])
+        self.settingsWidget.stopAfterLineEdit.setText(plugin_info["stopafter"])
+        self.settingsWidget.autosaveLineEdit.setText(plugin_info["autosaveinterval"])
+
+        if plugin_info["stoptimer"] == "True":
+            self.settingsWidget.stopTimerCheckBox.setChecked(True)
+        else:
+            self.settingsWidget.stopTimerCheckBox.setChecked(False)
+
+        if plugin_info["autosave"] == "True":
+            self.settingsWidget.autosaveCheckBox.setChecked(True)
+        else:
+            self.settingsWidget.autosaveCheckBox.setChecked(False)
+        # SMU settings
+        if plugin_info["singlechannel"] == "True":
+            self.settingsWidget.checkBox_singleChannel.setChecked(True)
+
+        # fill channels
+        default_smu = plugin_info["smu"]
+        try:
+            self.settingsWidget.comboBox_channel.clear()
+            self.settingsWidget.comboBox_channel.addItems(self.function_dict["smu"][default_smu]["smu_channelNames"]())
+            self.settingsWidget.comboBox_channel.setCurrentText(plugin_info["channel"])
+        except KeyError:
+            self.logger.log_warn(f"SMU {default_smu} not found in function_dict")
+        # update the SMU selection combobox
+        self.settingsWidget.smuBox.clear()
+        self.settingsWidget.smuBox.addItems(list(self.function_dict["smu"].keys()))
+        self.settingsWidget.smuBox.setCurrentText(default_smu)
+
+        self.settingsWidget.spectroBox.clear()
+        self.settingsWidget.spectroBox.addItems(list(self.function_dict["spectrometer"].keys()))
+        self.settingsWidget.spectroBox.setCurrentText(plugin_info["spectrometer"])
+
+        currentIndex = self.settingsWidget.comboBox_channel.findText(plugin_info["channel"], Qt.MatchFlag.MatchFixedString)
+        if currentIndex > -1:
+            self.settingsWidget.comboBox_channel.setCurrentIndex(currentIndex)
+        currentIndex = self.settingsWidget.comboBox_inject.findText(plugin_info["inject"])
+        if currentIndex > -1:
+            self.settingsWidget.comboBox_inject.setCurrentIndex(currentIndex)
+        currentIndex = self.settingsWidget.comboBox_sourceSenseMode.findText(plugin_info["sourcesensemode"])
+        if currentIndex > -1:
+            self.settingsWidget.comboBox_sourceSenseMode.setCurrentIndex(currentIndex)
+        currentIndex = self.settingsWidget.comboBox_sourceDelayMode.findText(plugin_info["sourcedelaymode"])
+        if currentIndex > -1:
+            self.settingsWidget.comboBox_sourceDelayMode.setCurrentIndex(currentIndex)
+        currentIndex = self.settingsWidget.comboBox_drainInject.findText(plugin_info["draininject"])
+        if currentIndex > -1:
+            self.settingsWidget.comboBox_drainInject.setCurrentIndex(currentIndex)
+        currentIndex = self.settingsWidget.comboBox_drainSenseMode.findText(plugin_info["drainsensemode"])
+        if currentIndex > -1:
+            self.settingsWidget.comboBox_drainSenseMode.setCurrentIndex(currentIndex)
+        currentIndex = self.settingsWidget.comboBox_drainDelayMode.findText(plugin_info["draindelaymode"])
+        if currentIndex > -1:
+            self.settingsWidget.comboBox_drainDelayMode.setCurrentIndex(currentIndex)
+
+        self.settingsWidget.lineEdit_sourceSetValue.setText(plugin_info["sourcesetvalue"])
+        self.settingsWidget.lineEdit_sourceLimit.setText(plugin_info["sourcelimit"])
+        self.settingsWidget.lineEdit_sourceNPLC.setText(plugin_info["sourcenplc"])
+        self.settingsWidget.lineEdit_sourceDelay.setText(plugin_info["sourcedelay"])
+        self.settingsWidget.lineEdit_drainSetValue.setText(plugin_info["drainsetvalue"])
+        self.settingsWidget.lineEdit_drainLimit.setText(plugin_info["drainlimit"])
+        self.settingsWidget.lineEdit_drainNPLC.setText(plugin_info["drainnplc"])
+        self.settingsWidget.lineEdit_drainDelay.setText(plugin_info["draindelay"])
+
+        # update to the correct GUI state
         self.set_running(False)
         self._connect_signals()
         self._update_GUI_state()
