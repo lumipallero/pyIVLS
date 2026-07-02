@@ -210,25 +210,57 @@ class specTimeIVGUI:
     ########Functions
     ################################### internal
 
+    @public
     def set_gui_from_settings(self):
         """
         Updates the GUI fields based on the internal settings dictionary.
         This function assumes that the settings have already been set using the `setSettings` function.
         """
-        # Use dynamic mapper to set all GUI values with automatic conversion
-        result = self.dynamic_mapper.set_values(self.settings, self.dynamic_field_mapping, self.dynamic_validation_rules)
+        self.settingsWidget.lineEdit_path.setText(self.settings["address"])
+        self.settingsWidget.lineEdit_filename.setText(self.settings["filename"])
+        self.settingsWidget.lineEdit_sampleName.setText(self.settings["samplename"])
+        self.settingsWidget.lineEdit_comment.setText(self.settings["comment"])
 
-        if result.is_error:
-            self.logger.log_error(f"Error setting GUI values: {result.error_message}")
-            self.logger.info_popup(f"Error setting GUI values: {result.error_message}")
+        self.settingsWidget.step_lineEdit.setText(str(self.settings["timestep"]))
+        self.settingsWidget.stopAfterLineEdit.setText(str(self.settings["stopafter"]))
+        self.settingsWidget.autosaveLineEdit.setText(str(self.settings["autosaveinterval"]))
 
+        self.settingsWidget.stopTimerCheckBox.setChecked(self.settings["stoptimer"])
+        self.settingsWidget.autosaveCheckBox.setChecked(self.settings["autosave"])
+
+        # SMU settings
+        self.settingsWidget.checkBox_singleChannel.setChecked(self.settings["singlechannel"])
+
+        self.settingsWidget.comboBox_channel.setCurrentText(self.settings["channel"])
+        self.settingsWidget.comboBox_inject.setCurrentText(self.settings["inject"])
+        self.settingsWidget.comboBox_sourceSenseMode.setCurrentText(self.settings["sourcesensemode"])
+        self.settingsWidget.comboBox_sourceDelayMode.setCurrentText(self.settings["sourcedelaymode"])
+        self.settingsWidget.comboBox_drainInject.setCurrentText(self.settings["draininject"])
+        self.settingsWidget.comboBox_drainSenseMode.setCurrentText(self.settings["drainsensemode"])
+        self.settingsWidget.comboBox_drainDelayMode.setCurrentText(self.settings["draindelaymode"])
+
+        self.settingsWidget.lineEdit_sourceSetValue.setText(str(self.settings["sourcevalue"]))
+        self.settingsWidget.lineEdit_sourceLimit.setText(str(self.settings["sourcelimit"]))
+        self.settingsWidget.lineEdit_sourceNPLC.setText(str(self.settings["sourcenplc"] * 1000))  # settings stores as s, but GUI shows in ms, so convert to ms for showing
+        self.settingsWidget.lineEdit_sourceDelay.setText(str(self.settings["sourcedelay"] * 1000))
+        self.settingsWidget.lineEdit_drainSetValue.setText(str(self.settings["drainvalue"]))
+        self.settingsWidget.lineEdit_drainLimit.setText(str(self.settings["drainlimit"]))
+        self.settingsWidget.lineEdit_drainNPLC.setText(str(self.settings["drainnplc"] * 1000))  # settings stores as s, but GUI shows in ms, so convert to ms for showing
+        self.settingsWidget.lineEdit_drainDelay.setText(str(self.settings["draindelay"] * 1000))
+
+        # Update the SMU selection combobox
+        self.settingsWidget.smuBox.setCurrentText(self.settings["smu"])
+        self.settingsWidget.spectroBox.setCurrentText(self.settings["spectrometer"])
+
+        # Update the GUI state to reflect the current settings
         self._update_GUI_state()
 
     def parse_settings_widget(self):
         """Parses the settings widget for the templatePlugin. Extracts current values. Checks if values are allowed. Provides settings of template plugin to an external plugin
 
-        Returns PyIVLSReturn:
-            Success with settings_dict or error with message
+        Returns [status, settings_dict]:
+            status: 0 - no error, ~0 - error
+            settings_dict or error message
         """
         # Use dependency manager to handle all dependency validation and settings extraction
         parse_target = copy.deepcopy(self.settings)
@@ -260,10 +292,11 @@ class specTimeIVGUI:
         else:
             self.settings["drainchannel"] = "xxx"  # for compatibility if the smu does not support second channel
 
-        retset = self.settings
-        retset["smu_settings"] = self.smu_settings
-        retset["spectrometer_settings"] = self.spectrometer_settings
-        return PyIVLSReturn.success(retset)
+        self.settings["smu_settings"] = self.smu_settings
+        self.settings["spectrometer_settings"] = self.spectrometer_settings
+
+        # Return a copy so callers cannot mutate plugin state by reference.
+        return [0, copy.deepcopy(self.settings)]
 
     ########Functions
     ###############GUI setting up
@@ -440,8 +473,9 @@ class specTimeIVGUI:
     def smuInit(self):
         """intializaes smu with data for the 1st sweep step
 
-        Return PyIVLSReturn:
-                Success or error with message
+        Return [status, message]:
+                status: 0 - no error, ~0 - error
+                message
         """
         function_dict = self.dependency_manager.function_dict
         s = {}
@@ -464,6 +498,20 @@ class specTimeIVGUI:
         s["drainlimit"] = self.settings["drainlimit"]  # limit for current in voltage mode or for voltage in current mode (may not be used in single channel mode)
         s["drainhighc"] = self.smu_settings["drainhighc"]
 
+        # new addition for filters
+        if self.smu_settings["drainfiltertype"] == "Repeat average":
+            s["drainfiltertype"] = "FILTER_REPEAT_AVG"
+            s["drainfiltervalue"] = self.smu_settings["drainfiltervalue"]
+        else:
+            s["drainfiltertype"] = "FILTER_OFF"
+        s["draindelayfactor"] = self.smu_settings["draindelayfactor"]
+
+        if self.smu_settings["sourcefiltertype"] == "Repeat average":
+            s["sourcefiltertype"] = "FILTER_REPEAT_AVG"
+            s["sourcefiltervalue"] = self.smu_settings["sourcefiltervalue"]
+        else:
+            s["sourcefiltertype"] = "FILTER_OFF"
+
         if self.settings["sourcesensemode"] == "4 wire":
             s["sourcesense"] = True  # source sence mode: may take values [True - 4 wire, False - 2 wire]
         else:
@@ -475,7 +523,7 @@ class specTimeIVGUI:
 
         function_dict["smu"][self.settings["smu"]]["smu_init"](s)
 
-        return PyIVLSReturn.success({"message": "OK"})
+        return [0, {"message": "OK"}]
 
     ########Functions
     ########create file header
@@ -494,12 +542,13 @@ class specTimeIVGUI:
         self.logger.log_debug("Running timeIV plugin action")
         self.set_running(True)
 
-        parse_result = self.parse_settings_widget()
-        if parse_result.is_error:
-            self.logger.log_error("timeIV plugin: parse_settings_widget returned error: " + parse_result.error_message)
-            self.logger.info_popup(parse_result.error_message)
+        status, data = self.parse_settings_widget()
+        if status:
+            error_msg = data.get("Error message", str(data)) if isinstance(data, dict) else str(data)
+            self.logger.log_error("timeIV plugin: parse_settings_widget returned error: " + error_msg)
+            self.logger.info_popup(error_msg)
             self.set_running(False)
-            return parse_result
+            return [status, data]
 
         function_dict["smu"][self.settings["smu"]]["set_running"](True)
 
@@ -509,13 +558,13 @@ class specTimeIVGUI:
             self.logger.info_popup(state)
             self.set_running(False)
             function_dict["smu"][self.settings["smu"]]["set_running"](False)
-            return PyIVLSReturn.dependency_error({"Error message": state})
+            return [2, {"Error message": state}]
 
         ##IRtodo#### check that the new file will not overwrite existing data -> implement dialog
         self.logger.log_debug("TimeIV run_thread created")
         self.run_thread = thread_with_exception(self._sequenceImplementation)
         self.run_thread.start()
-        return PyIVLSReturn.success({"message": "OK"})
+        return [0, {"message": "OK"}]
 
     ########Functions
     ########sequence implementation
@@ -540,13 +589,13 @@ class specTimeIVGUI:
 
         status, state = function_dict["smu"][self.settings["smu"]]["smu_connect"]()
         if status:
-            return PyIVLSReturn.dependency_error({"Error message": state})
+            return [2, {"Error message": state}]
 
         self._sequenceImplementation()
         status, state = function_dict["smu"][self.settings["smu"]]["smu_disconnect"]()
         if status:
             self.logger.log_warn(f"Error disconnecting SMU: {state}")
-        return PyIVLSReturn.success({"message": "sweep finished"})
+        return [0, {"message": "sweep finished"}]
 
     def _initialize_smu(self):
         """Initializes the SMU with the settings provided in self.settings."""
@@ -554,9 +603,10 @@ class specTimeIVGUI:
         smu_name = self.settings["smu"]
         self.logger.log_debug(f"Initializing SMU: {smu_name}")
 
-        smu_init_result = self.smuInit()
-        if smu_init_result.is_error:
-            raise PluginException(smu_init_result.error_message)
+        status, data = self.smuInit()
+        if status:
+            error_msg = data.get("Error message", str(data)) if isinstance(data, dict) else str(data)
+            raise PluginException(error_msg)
 
         # turn off outputs, setup new source
         self.logger.log_debug("_timeIVimplementation: Turning off SMU output.")
@@ -593,7 +643,7 @@ class specTimeIVGUI:
         if status:
             self.logger.log_warn(f"Error turning on SMU outputs: {state}")
 
-        return PyIVLSReturn.success({"message": "SMU initialized successfully"})
+        return [0, {"message": "SMU initialized successfully"}]
 
     def _initialize_spectrometer(self):
         """Initializes the spectrometer with the settings provided in self.spectrometer_settings."""
@@ -606,7 +656,7 @@ class specTimeIVGUI:
         status, state = function_dict["spectrometer"][spectrometer_name]["spectrometerConnect"]()
         if status:
             self.logger.log_warn(f"Error connecting Spectrometer: {state}")
-            return PyIVLSReturn.dependency_error({"Error message": state})
+            return [2, {"Error message": state}]
 
         # check what mode spectrometer is in for integration time
         auto_mode = self.spectrometer_settings["integrationtimetype"] == "auto"
@@ -621,7 +671,7 @@ class specTimeIVGUI:
             self.logger.log_warn(f"Error setting integration time: {state}")
             raise PluginException(f"Error setting integration time: {state}")
 
-        return PyIVLSReturn.success({"message": "Spectrometer initialized successfully"})
+        return [0, {"message": "Spectrometer initialized successfully"}]
 
     def _timeIVimplementation(self):
         function_dict = self.dependency_manager.function_dict
@@ -630,16 +680,18 @@ class specTimeIVGUI:
         spectrometer_name = self.settings["spectrometer"]
         smu_name = self.settings["smu"]
 
-        smu_init_result = self._initialize_smu()
-        if smu_init_result.is_error:
-            self.logger.log_warn(f"Error initializing SMU: {smu_init_result.error_message}")
-            raise PluginException(f"Error initializing SMU: {smu_init_result.error_message}")
+        status, data = self._initialize_smu()
+        if status:
+            error_msg = data.get("message", str(data)) if isinstance(data, dict) else str(data)
+            self.logger.log_warn(f"Error initializing SMU: {error_msg}")
+            raise PluginException(f"Error initializing SMU: {error_msg}")
         # output channels are now both on.
 
-        spectrometer_init_result = self._initialize_spectrometer()
-        if spectrometer_init_result.is_error:
-            self.logger.log_warn(f"Error initializing Spectrometer: {spectrometer_init_result.error_message}")
-            raise PluginException(f"Error initializing Spectrometer: {spectrometer_init_result.error_message}")
+        status, data = self._initialize_spectrometer()
+        if status:
+            error_msg = data.get("message", str(data)) if isinstance(data, dict) else str(data)
+            self.logger.log_warn(f"Error initializing Spectrometer: {error_msg}")
+            raise PluginException(f"Error initializing Spectrometer: {error_msg}")
         # spectrometer now connected with integration time set
 
         timeData = []
@@ -781,7 +833,7 @@ class specTimeIVGUI:
             time.sleep(self.settings["timestep"])
 
         self.logger.log_debug("_timeIVimplementation: Completed successfully.")
-        return PyIVLSReturn.success({"message": "OK"})
+        return [0, {"message": "OK"}]
 
     def _sequenceImplementation(self):
         """
