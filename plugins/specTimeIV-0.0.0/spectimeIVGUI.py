@@ -210,7 +210,6 @@ class specTimeIVGUI:
     ########Functions
     ################################### internal
 
-    @public
     def set_gui_from_settings(self):
         """
         Updates the GUI fields based on the internal settings dictionary.
