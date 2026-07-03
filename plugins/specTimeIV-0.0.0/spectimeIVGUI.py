@@ -1128,9 +1128,9 @@ class specTimeIVGUI:
                 # if status:
                 #    self.logger.log_warn(f"Error turning off SMU output during cleanup: {state}")
 
-                status, state = function_dict["smu"][self.settings["smu"]]["smu_disconnect"]()
-                if status:
-                    self.logger.log_warn(f"Error disconnecting SMU during cleanup: {state}")
+                function_dict["smu"][self.settings["smu"]]["smu_disconnect"]()
+                # if status:
+                #    self.logger.log_warn(f"Error disconnecting SMU during cleanup: {state}")
 
                 status, state = function_dict["spectrometer"][self.settings["spectrometer"]]["spectrometerDisconnect"]()
                 if status:
@@ -1140,5 +1140,6 @@ class specTimeIVGUI:
                     self.logger.info_popup("Implementation stopped because of exception. Check log")
             except Exception as e:
                 self.logger.log_warn(f"timeIV plugin: smu or spectrometer turn off failed because of unexpected exception: {e}")
+
                 self.logger.info_popup("SMU or spectrometer turn off failed. Check log")
             self.set_running(False)
