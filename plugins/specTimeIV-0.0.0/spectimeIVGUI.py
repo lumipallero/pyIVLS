@@ -267,6 +267,7 @@ class specTimeIVGUI:
         parse_target["smu"] = self.settingsWidget.smuBox.currentText()
         parse_target["spectrometer"] = self.settingsWidget.spectroBox.currentText()
         dependency_result = self.dependency_manager.parse_dependencies(parse_target)
+        print("Dependency result:", dependency_result)  # Debugging line to check the output of parse_dependencies
         if dependency_result[0]:
             return dependency_result
 
