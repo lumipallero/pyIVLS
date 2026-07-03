@@ -927,7 +927,7 @@ class specTimeIVGUI:
         if auto_mode:
             self.logger.log_warn("Spectrometer auto integration time mode is not supported in spectimeIV plugin. Defaulting to constant integration time.")
         # Get and set constant integration time for the measurement
-        integration_time_setting = self.spectrometer_settings["integrationTime"]
+        integration_time_setting = self.spectrometer_settings["integrationtime"]
         self.logger.log_debug(f"Setting constant integration time: {integration_time_setting}")
 
         status, state = function_dict["spectrometer"][spectrometer_name]["spectrometerSetIntegrationTime"](integration_time_setting)
@@ -1055,7 +1055,7 @@ class specTimeIVGUI:
 
                 # Create metadata dictionary
                 varDict = {}
-                varDict["integrationtime"] = self.spectrometer_settings["integrationTime"]
+                varDict["integrationtime"] = self.spectrometer_settings["integrationtime"]
                 varDict["triggermode"] = 1 if self.spectrometer_settings.get("externalTrigger", False) else 0
                 varDict["name"] = self.spectrometer_settings.get("samplename", "")
                 varDict["timestamp"] = toc
