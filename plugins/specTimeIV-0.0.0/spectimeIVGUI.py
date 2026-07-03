@@ -871,8 +871,8 @@ class specTimeIVGUI:
         # turn off outputs, setup new source
         self.logger.log_debug("_timeIVimplementation: Turning off SMU output.")
         status, state = function_dict["smu"][smu_name]["smu_outputOFF"]()
-        if status:
-            self.logger.log_warn(f"Error turning off SMU output: {state}")
+        # if status:
+        #    self.logger.log_warn(f"Error turning off SMU output: {state}")
         self.logger.log_debug("_timeIVimplementation: Setting SMU output for source channel.")
         status, state = function_dict["smu"][smu_name]["smu_setOutput"](
             self.settings["channel"],
