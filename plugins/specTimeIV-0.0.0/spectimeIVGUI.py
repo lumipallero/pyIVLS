@@ -267,7 +267,7 @@ class specTimeIVGUI:
         parse_target["smu"] = self.settingsWidget.smuBox.currentText()
         parse_target["spectrometer"] = self.settingsWidget.spectroBox.currentText()
         dependency_result = self.dependency_manager.parse_dependencies(parse_target)
-        if dependency_result.is_error:
+        if dependency_result[0]:
             return dependency_result
 
         # Extract dependency settings from the result
@@ -276,11 +276,11 @@ class specTimeIVGUI:
 
         # Use mapper component for value extraction and validation
         mapper_result = self.dynamic_mapper.get_values(self.dynamic_field_mapping, self.dynamic_validation_rules)
-        if mapper_result.is_error:
+        if mapper_result[0]:
             return mapper_result
 
         # Update settings with extracted values
-        self.settings.update(mapper_result.data)
+        self.settings.update(mapper_result[1])
 
         # Handle dual channel logic
         currentIndex = self.settingsWidget.comboBox_channel.currentIndex()
