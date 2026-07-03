@@ -259,43 +259,208 @@ class specTimeIVGUI:
         """Parses the settings widget for the templatePlugin. Extracts current values. Checks if values are allowed. Provides settings of template plugin to an external plugin
 
         Returns [status, settings_dict]:
-            status: 0 - no error, ~0 - error
-            settings_dict or error message
+            status: 0 - no error, ~0 - error (add error code later on if needed)
+            self.settings
         """
-        # Use dependency manager to handle all dependency validation and settings extraction
-        parse_target = copy.deepcopy(self.settings)
-        parse_target["smu"] = self.settingsWidget.smuBox.currentText()
-        parse_target["spectrometer"] = self.settingsWidget.spectroBox.currentText()
-        dependency_result = self.dependency_manager.parse_dependencies(parse_target)
-        print("Dependency result:", dependency_result)  # Debugging line to check the output of parse_dependencies
-        if dependency_result[0]:
-            return dependency_result
+        if not self.function_dict:
+            return (
+                3,
+                {
+                    "Error message": "Missing functions in timeIV plugin. Check log",
+                    "Missing functions": self.missing_functions,
+                },
+            )
+        smu_selection = self.settingsWidget.smuBox.currentText()
+        spectrometer_selection = self.settingsWidget.spectroBox.currentText()
+        if smu_selection not in self.function_dict["smu"]:
+            return (3, {"Error message": "SMU plugin not found in function_dict"})
+        if spectrometer_selection not in self.function_dict["spectrometer"]:
+            return (3, {"Error message": "Spectrometer plugin not found in function_dict"})
 
-        # Extract dependency settings from the result
-        self.smu_settings = dependency_result[1]["smu_settings"]
-        self.spectrometer_settings = dependency_result[1]["spectrometer_settings"]
-        # self.spectrometer_settings = dependency_result[1].get_data_value("spectrometer_settings", {})
+        # initialize new settings dict as to not write bad values to internal settings
+        new_settings = {}
+        new_settings["smu"] = smu_selection
+        new_settings["spectrometer"] = spectrometer_selection
 
-        # Use mapper component for value extraction and validation
-        mapper_result = self.dynamic_mapper.get_values(self.dynamic_field_mapping, self.dynamic_validation_rules)
-        if mapper_result[0]:
-            return mapper_result
+        status, smu_settings = self.function_dict["smu"][new_settings["smu"]]["parse_settings_widget"]()
+        if status:
+            return (2, smu_settings)
+        status, spectrometer_settings = self.function_dict["spectrometer"][new_settings["spectrometer"]]["parse_settings_widget"]()
+        if status:
+            return (2, spectrometer_settings)
 
-        # Update settings with extracted values
-        self.settings.update(mapper_result[1])
+        status, save_settings = self._parseSaveData()
+        if status:
+            return (status, save_settings)
+        else:
+            new_settings.update(save_settings)
 
-        # Handle dual channel logic
+        try:
+            new_settings["timestep"] = float(self.settingsWidget.step_lineEdit.text())
+        except ValueError:
+            return (1, {"Error message": "Value error in timeIV plugin: time step field should be numeric"})
+        if new_settings["timestep"] <= 0:
+            return (1, {"Error message": "Value error in timeIV plugin: time step field should be greater than 0"})
+        try:
+            new_settings["stopafter"] = float(self.settingsWidget.stopAfterLineEdit.text())
+        except ValueError:
+            return (1, {"Error message": "Value error in timeIV plugin: stop after field should be numeric"})
+        if new_settings["stopafter"] <= 0:
+            return (1, {"Error message": "Value error in timeIV plugin: autosave interval field should be numeric"})
+        try:
+            new_settings["autosaveinterval"] = float(self.settingsWidget.autosaveLineEdit.text())
+        except ValueError:
+            return (
+                1,
+                {"Error message": "Value error in timeIV plugin: autosave interval field should be greater than 0"},
+            )
+        if new_settings["autosaveinterval"] <= 0:
+            return (
+                1,
+                {"Error message": "Value error in timeIV plugin: autosave interval field should be greater than 0"},
+            )
+        new_settings["stoptimer"] = self.settingsWidget.stopTimerCheckBox.isChecked()
+        new_settings["autosave"] = self.settingsWidget.autosaveCheckBox.isChecked()
+
+        # SMU settings
+        # Determine source channel: may take values depending on the channel names in smu, eg. for Keithley 2612B [smua, smub]
+        new_settings["channel"] = (self.settingsWidget.comboBox_channel.currentText()).lower()
         currentIndex = self.settingsWidget.comboBox_channel.currentIndex()
         if self.settingsWidget.comboBox_channel.count() > 1:
             if currentIndex == 0:
-                self.settings["drainchannel"] = self.settingsWidget.comboBox_channel.itemText(1)
+                new_settings["drainchannel"] = self.settingsWidget.comboBox_channel.itemText(1)
             else:
-                self.settings["drainchannel"] = self.settingsWidget.comboBox_channel.itemText(0)
+                new_settings["drainchannel"] = self.settingsWidget.comboBox_channel.itemText(0)
         else:
-            self.settings["drainchannel"] = "xxx"  # for compatibility if the smu does not support second channel
+            new_settings["drainchannel"] = "xxx"  # for compatability if the smu does not support second channel
 
-        self.settings["smu_settings"] = self.smu_settings
-        self.settings["spectrometer_settings"] = self.spectrometer_settings
+        # Determine source type: may take values [current, voltage]
+        new_settings["inject"] = (self.settingsWidget.comboBox_inject.currentText()).lower()
+        # Determine delay mode for source: may take values [auto, manual]
+        new_settings["sourcedelaymode"] = (self.settingsWidget.comboBox_sourceDelayMode.currentText()).lower()
+        # Determine source sence mode: may take values [2 wire, 4 wire, 2 & 4 wire]
+        new_settings["sourcesensemode"] = (self.settingsWidget.comboBox_sourceSenseMode.currentText()).lower()
+        # Determine delay mode for drain: may take values [auto, manual]
+        new_settings["draindelaymode"] = (self.settingsWidget.comboBox_drainDelayMode.currentText()).lower()
+        # Determine drain type: may take values [current, voltage]
+        new_settings["draininject"] = (self.settingsWidget.comboBox_drainInject.currentText()).lower()
+        # Determine drain sence mode: may take values [2 wire, 4 wire, 2 & 4 wire]
+        new_settings["drainsensemode"] = (self.settingsWidget.comboBox_drainSenseMode.currentText()).lower()
+
+        # Determine a single channel mode: may be True or False
+        if self.settingsWidget.checkBox_singleChannel.isChecked():
+            new_settings["singlechannel"] = True
+        else:
+            new_settings["singlechannel"] = False
+
+        # Determine settings for source
+        # start should be float
+        try:
+            new_settings["sourcevalue"] = float(self.settingsWidget.lineEdit_sourceSetValue.text())
+        except ValueError:
+            return (
+                1,
+                {"Error message": "Value error in timeIV plugin: source set value field should be numeric"},
+            )
+
+        # limit should be float >0
+        try:
+            new_settings["sourcelimit"] = float(self.settingsWidget.lineEdit_sourceLimit.text())
+        except ValueError:
+            return (
+                1,
+                {"Error message": "Value error in timeIV plugin: source limit field should be numeric"},
+            )
+        if new_settings["sourcelimit"] <= 0:
+            return (
+                1,
+                {"Error message": "Value error in timeIV plugin: source limit field should be positive"},
+            )
+
+        # source nplc (in fact it is integration time for the measurement) is calculated from line frequency, should be float >0
+        try:
+            new_settings["sourcenplc"] = float(self.settingsWidget.lineEdit_sourceNPLC.text()) / 1000  # value in settings is in s; value in GUI is in ms
+        except ValueError:
+            return (
+                1,
+                {"Error message": "Value error in timeIV plugin: source nplc field should be numeric"},
+            )
+        if new_settings["sourcenplc"] <= 0:
+            return (
+                1,
+                {"Error message": "Value error in timeIV plugin: source nplc field should be positive"},
+            )
+
+        # delay (in fact it is stabilization time before the measurement), for Keithley control should be in s in GUI is ms, should be >0
+        try:
+            new_settings["sourcedelay"] = float(self.settingsWidget.lineEdit_sourceDelay.text()) / 1000
+        except ValueError:
+            return (
+                1,
+                {"Error message": "Value error in timeIV plugin: source delay field should be numeric"},
+            )
+        if new_settings["sourcedelay"] <= 0:
+            return (
+                1,
+                {"Error message": "Value error in timeIV plugin: source delay field should be positive"},
+            )
+
+        # start should be float
+        try:
+            new_settings["drainvalue"] = float(self.settingsWidget.lineEdit_drainSetValue.text())
+        except ValueError:
+            return (
+                1,
+                {"Error message": "Value error in timeIV plugin: drain set value field should be numeric"},
+            )
+
+        # limit should be float >0
+        try:
+            new_settings["drainlimit"] = float(self.settingsWidget.lineEdit_drainLimit.text())
+        except ValueError:
+            return (
+                1,
+                {"Error message": "Value error in timeIV plugin: drain limit field should be numeric"},
+            )
+        if new_settings["drainlimit"] <= 0:
+            return (
+                1,
+                {"Error message": "Value error in timeIV plugin: drain limit field should be positive"},
+            )
+
+        # drain nplc (in fact it is integration time for the measurement) is calculated from line frequency, should be float >0
+        try:
+            new_settings["drainnplc"] = float(self.settingsWidget.lineEdit_drainNPLC.text()) / 1000  # value in settings is in s; value in GUI is in ms
+        except ValueError:
+            return (
+                1,
+                {"Error message": "Value error in timeIV plugin: drain nplc field should be numeric"},
+            )
+        if new_settings["drainnplc"] <= 0:
+            return (
+                1,
+                {"Error message": "Value error in timeIV plugin: drain nplc field should be positive"},
+            )
+
+        # delay (in fact it is stabilization time before the measurement), for Keithley control should be in s in GUI is ms, should be >0
+        try:
+            new_settings["draindelay"] = float(self.settingsWidget.lineEdit_drainDelay.text()) / 1000
+        except ValueError:
+            return (
+                1,
+                {"Error message": "Value error in timeIV plugin: drain delay field should be numeric"},
+            )
+        if new_settings["draindelay"] <= 0:
+            return (
+                1,
+                {"Error message": "Value error in timeIV plugin: drain delay field should be positive"},
+            )
+        # Commit internal state only after all validation passed.
+        new_settings["smu"] = smu_selection
+        new_settings["smu_settings"] = smu_settings
+
+        self.settings = copy.deepcopy(new_settings)
+        self.smu_settings = copy.deepcopy(smu_settings)
 
         # Return a copy so callers cannot mutate plugin state by reference.
         return [0, copy.deepcopy(self.settings)]
