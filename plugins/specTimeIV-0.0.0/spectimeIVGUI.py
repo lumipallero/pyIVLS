@@ -272,8 +272,9 @@ class specTimeIVGUI:
             return dependency_result
 
         # Extract dependency settings from the result
-        self.smu_settings = dependency_result.get_data_value("smu_settings", {})
-        self.spectrometer_settings = dependency_result.get_data_value("spectrometer_settings", {})
+        self.smu_settings = dependency_result[1]["smu_settings"]
+        self.spectrometer_settings = dependency_result[1]["spectrometer_settings"]
+        # self.spectrometer_settings = dependency_result[1].get_data_value("spectrometer_settings", {})
 
         # Use mapper component for value extraction and validation
         mapper_result = self.dynamic_mapper.get_values(self.dynamic_field_mapping, self.dynamic_validation_rules)
