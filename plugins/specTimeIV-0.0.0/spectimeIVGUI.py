@@ -756,6 +756,8 @@ class specTimeIVGUI:
         s["drainlimit"] = self.settings["drainlimit"]  # limit for current in voltage mode or for voltage in current mode (may not be used in single channel mode)
         s["drainhighc"] = self.smu_settings["drainhighc"]
 
+        s["sourcedelayfactor"] = self.smu_settings["sourcedelayfactor"]
+
         # new addition for filters
         if self.smu_settings["drainfiltertype"] == "Repeat average":
             s["drainfiltertype"] = "FILTER_REPEAT_AVG"
