@@ -262,7 +262,8 @@ class specTimeIVGUI:
             status: 0 - no error, ~0 - error (add error code later on if needed)
             self.settings
         """
-        if not self.function_dict:
+        function_dict = self.dependency_manager.function_dict
+        if not function_dict:
             return (
                 3,
                 {
@@ -272,9 +273,9 @@ class specTimeIVGUI:
             )
         smu_selection = self.settingsWidget.smuBox.currentText()
         spectrometer_selection = self.settingsWidget.spectroBox.currentText()
-        if smu_selection not in self.function_dict["smu"]:
+        if smu_selection not in function_dict["smu"]:
             return (3, {"Error message": "SMU plugin not found in function_dict"})
-        if spectrometer_selection not in self.function_dict["spectrometer"]:
+        if spectrometer_selection not in function_dict["spectrometer"]:
             return (3, {"Error message": "Spectrometer plugin not found in function_dict"})
 
         # initialize new settings dict as to not write bad values to internal settings
@@ -282,10 +283,10 @@ class specTimeIVGUI:
         new_settings["smu"] = smu_selection
         new_settings["spectrometer"] = spectrometer_selection
 
-        status, smu_settings = self.function_dict["smu"][new_settings["smu"]]["parse_settings_widget"]()
+        status, smu_settings = function_dict["smu"][new_settings["smu"]]["parse_settings_widget"]()
         if status:
             return (2, smu_settings)
-        status, spectrometer_settings = self.function_dict["spectrometer"][new_settings["spectrometer"]]["parse_settings_widget"]()
+        status, spectrometer_settings = function_dict["spectrometer"][new_settings["spectrometer"]]["parse_settings_widget"]()
         if status:
             return (2, spectrometer_settings)
 
