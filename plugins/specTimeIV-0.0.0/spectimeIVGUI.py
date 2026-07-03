@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import QVBoxLayout, QFileDialog, QWidget
 from MplCanvas import MplCanvas  # this should be moved to some pluginsShare
 from threadStopped import thread_with_exception, ThreadStopped
 from plugin_components import LoggingHelper, FileManager, DataOrder, PluginException, DependencyManager
+import PyQt6.QtCore as Qt
 
 import pandas as pd
 
@@ -332,20 +333,20 @@ class specTimeIVGUI:
         default_smu = plugin_info["smu"]
         try:
             self.settingsWidget.comboBox_channel.clear()
-            self.settingsWidget.comboBox_channel.addItems(self.function_dict["smu"][default_smu]["smu_channelNames"]())
+            self.settingsWidget.comboBox_channel.addItems(self.dependency_manager.function_dict["smu"][default_smu]["smu_channelNames"]())
             self.settingsWidget.comboBox_channel.setCurrentText(plugin_info["channel"])
         except KeyError:
             self.logger.log_warn(f"SMU {default_smu} not found in function_dict")
         # update the SMU selection combobox
         self.settingsWidget.smuBox.clear()
-        self.settingsWidget.smuBox.addItems(list(self.function_dict["smu"].keys()))
+        self.settingsWidget.smuBox.addItems(list(self.dependency_manager.function_dict["smu"].keys()))
         self.settingsWidget.smuBox.setCurrentText(default_smu)
 
         self.settingsWidget.spectroBox.clear()
-        self.settingsWidget.spectroBox.addItems(list(self.function_dict["spectrometer"].keys()))
+        self.settingsWidget.spectroBox.addItems(list(self.dependency_manager.function_dict["spectrometer"].keys()))
         self.settingsWidget.spectroBox.setCurrentText(plugin_info["spectrometer"])
 
-        currentIndex = self.settingsWidget.comboBox_channel.findText(plugin_info["channel"], Qt.MatchFlag.MatchFixedString)
+        currentIndex = self.settingsWidget.comboBox_channel.findText(plugin_info["channel"])
         if currentIndex > -1:
             self.settingsWidget.comboBox_channel.setCurrentIndex(currentIndex)
         currentIndex = self.settingsWidget.comboBox_inject.findText(plugin_info["inject"])
