@@ -896,12 +896,12 @@ class specTimeIVGUI:
         # Turn on output
         if not self.settings["singlechannel"]:
             self.logger.log_debug("_timeIVimplementation: Turning on SMU output for source and drain channels.")
-            status, state = function_dict["smu"][smu_name]["smu_outputON"](self.settings["channel"], self.settings["drainchannel"])
+            function_dict["smu"][smu_name]["smu_outputON"](self.settings["channel"], self.settings["drainchannel"])
         else:
             self.logger.log_debug("_timeIVimplementation: Turning on SMU output for source channel.")
-            status, state = function_dict["smu"][smu_name]["smu_outputON"](self.settings["channel"])
-        if status:
-            self.logger.log_warn(f"Error turning on SMU outputs: {state}")
+            function_dict["smu"][smu_name]["smu_outputON"](self.settings["channel"])
+        #if status:
+        #    self.logger.log_warn(f"Error turning on SMU outputs: {state}")
 
         return [0, {"message": "SMU initialized successfully"}]
 
