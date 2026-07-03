@@ -255,6 +255,28 @@ class specTimeIVGUI:
         # Update the GUI state to reflect the current settings
         self._update_GUI_state()
 
+    def _parseSaveData(self):
+        """Returns the parsed save data dictionary, does not write to it.
+
+        Returns:
+            _type_: _description_
+        """
+        save_settings = {}
+        save_settings["address"] = self.settingsWidget.lineEdit_path.text()
+        if not os.path.isdir(save_settings["address"] + os.sep):
+            self.logger.log_warn("timeIV plugin: address string should point to a valid directory")
+            return (1, {"Error message": " timeIV plugin: address string should point to a valid directory"})
+
+        save_settings["filename"] = self.settingsWidget.lineEdit_filename.text()
+        if not is_valid_filename(save_settings["filename"]):
+            self.logger.log_warn("timeIV plugin: filename is not valid")
+            self.logger.info_popup("timeIV plugin: filename is not valid")
+            return (1, {"Error message": "timeIV plugin: filename is not valid"})
+
+        save_settings["samplename"] = self.settingsWidget.lineEdit_sampleName.text()
+        save_settings["comment"] = self.settingsWidget.lineEdit_comment.text()
+        return (0, save_settings)
+
     def parse_settings_widget(self):
         """Parses the settings widget for the templatePlugin. Extracts current values. Checks if values are allowed. Provides settings of template plugin to an external plugin
 
