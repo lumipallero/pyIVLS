@@ -482,8 +482,12 @@ class specTimeIVGUI:
         new_settings["smu"] = smu_selection
         new_settings["smu_settings"] = smu_settings
 
+        new_settings["spectrometer"] = spectrometer_selection
+        new_settings["spectrometer_settings"] = spectrometer_settings
+
         self.settings = copy.deepcopy(new_settings)
         self.smu_settings = copy.deepcopy(smu_settings)
+        self.spectrometer_settings = copy.deepcopy(spectrometer_settings)
 
         # Return a copy so callers cannot mutate plugin state by reference.
         return [0, copy.deepcopy(self.settings)]
@@ -900,7 +904,7 @@ class specTimeIVGUI:
         else:
             self.logger.log_debug("_timeIVimplementation: Turning on SMU output for source channel.")
             function_dict["smu"][smu_name]["smu_outputON"](self.settings["channel"])
-        #if status:
+        # if status:
         #    self.logger.log_warn(f"Error turning on SMU outputs: {state}")
 
         return [0, {"message": "SMU initialized successfully"}]
