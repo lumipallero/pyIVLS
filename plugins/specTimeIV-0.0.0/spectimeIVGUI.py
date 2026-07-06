@@ -132,78 +132,6 @@ class specTimeIVGUI:
         layout.addWidget(self.sc)
         self.MDIWidget.setLayout(layout)
 
-    def _setup_dynamic_mappings(self, line_frequency=50):
-        """Setup dynamic field mappings for the GUI"""
-
-        # Simple field mapping: setting_name -> widget_name
-        self.dynamic_field_mapping = {
-            # Basic file and timing settings
-            "address": "lineEdit_path",
-            "filename": "lineEdit_filename",
-            "samplename": "lineEdit_sampleName",
-            "comment": "lineEdit_comment",
-            "timestep": "step_lineEdit",
-            "stopafter": "stopAfterLineEdit",
-            "autosaveinterval": "autosaveLineEdit",
-            "stoptimer": "stopTimerCheckBox",
-            "autosave": "autosaveCheckBox",
-            # SMU configuration
-            "singlechannel": "checkBox_singleChannel",
-            "channel": "comboBox_channel",
-            "inject": "comboBox_inject",
-            "sourcedelaymode": "comboBox_sourceDelayMode",
-            "sourcesensemode": "comboBox_sourceSenseMode",
-            "draindelaymode": "comboBox_drainDelayMode",
-            "draininject": "comboBox_drainInject",
-            "drainsensemode": "comboBox_drainSenseMode",
-            # SMU values (will need conversion for some)
-            "sourcevalue": "lineEdit_sourceSetValue",
-            "sourcelimit": "lineEdit_sourceLimit",
-            "sourcenplc": "lineEdit_sourceNPLC",
-            "sourcedelay": "lineEdit_sourceDelay",
-            "drainvalue": "lineEdit_drainSetValue",
-            "drainlimit": "lineEdit_drainLimit",
-            "drainnplc": "lineEdit_drainNPLC",
-            "draindelay": "lineEdit_drainDelay",
-            "smu": "smuBox",
-            "spectrometer": "spectroBox",
-        }
-
-        # Validation and conversion rules for extracting values from GUI
-        # FIXME: The validation rules contain a magic constant for line frequency
-        self.dynamic_validation_rules = {
-            "address": {"validator": lambda x: isinstance(x, str) and len(x.strip()) > 0 and os.path.exists(x), "error_message": "Address is required"},
-            "filename": {"validator": lambda x: isinstance(x, str) and is_valid_filename(x), "error_message": "filename must be a valid filename"},
-            "timestep": {"validator": lambda x: isinstance(x, (float)) and x > 0, "error_message": "Time step must be positive"},
-            "stopafter": {"validator": lambda x: isinstance(x, (float)) and x > 0, "error_message": "Stop time must be positive"},
-            "autosaveinterval": {"validator": lambda x: isinstance(x, (float)) and x > 0, "error_message": "Auto save interval must be positive"},
-            "sourcelimit": {"validator": lambda x: isinstance(x, (float)) and x > 0, "error_message": "Source limit must be positive"},
-            "drainlimit": {"validator": lambda x: isinstance(x, (float)) and x > 0, "error_message": "Drain limit must be positive"},
-            "sourcenplc": {
-                "converter": lambda x: float(x) * 0.001 * line_frequency,
-                "display_converter": lambda x: float(x) / (0.001 * line_frequency),
-                "validator": lambda x: isinstance(x, (float)) and x > 0,
-                "error_message": "Source NPLC must be positive",
-            },
-            "sourcedelay": {
-                "converter": lambda x: float(x) / 1000,
-                "display_converter": lambda x: float(x) * 1000,
-                "validator": lambda x: isinstance(x, (float)) and x > 0,
-                "error_message": "Source delay must be positive",
-            },
-            "drainnplc": {
-                "converter": lambda x: float(x) * 0.001 * line_frequency,
-                "display_converter": lambda x: float(x) / (0.001 * line_frequency),
-                "validator": lambda x: isinstance(x, (float)) and x > 0,
-                "error_message": "Drain NPLC must be positive",
-            },
-            "draindelay": {
-                "converter": lambda x: float(x) / 1000,
-                "display_converter": lambda x: float(x) * 1000,
-                "validator": lambda x: isinstance(x, (float)) and x > 0,
-                "error_message": "Drain delay must be positive",
-            },
-        }
 
     ########Functions
     ########GUI Slots
@@ -741,6 +669,17 @@ class specTimeIVGUI:
         """
         function_dict = self.dependency_manager.function_dict
         s = {}
+        def guardrail_nplc(nplc_seconds, line_frequency):
+            nplc = nplc_seconds * line_frequency
+            if nplc > 25:
+                nplc = 25
+                print(f"NPLC value is too high, setting to 25 PLC to avoid errors. NPLC was set to {nplc_seconds} seconds, which corresponds to {nplc} PLC at line frequency {line_frequency} Hz.")
+            return nplc
+        
+        freq = self.smu_settings["lineFrequency"]
+        
+        
+        
         # THIS IS MISSING SOURCE VALUE ak start and end
         s["pulse"] = False
         s["source"] = self.settings["channel"]  # may take values depending on the channel names in smu, e.g. for Keithley 2612B [smua, smub]
@@ -748,13 +687,13 @@ class specTimeIVGUI:
         s["type"] = "v" if self.settings["inject"] == "voltage" else "i"  # source inject current or voltage: may take values [i ,v]
         s["single_ch"] = self.settings["singlechannel"]  # single channel mode: may be True or False
 
-        s["sourcenplc"] = self.settings["sourcenplc"]  # drain NPLC (may not be used in single channel mode)
+        s["sourcenplc"] = guardrail_nplc(self.settings["sourcenplc"], freq)  # drain NPLC (may not be used in single channel mode)
         s["delay"] = True if self.settings["sourcedelaymode"] == "auto" else False  # stabilization time mode for source: may take values [True - Auto, False - manual]
         s["delayduration"] = self.settings["sourcedelay"]  # stabilization time duration if manual (may not be used in single channel mode)
         s["limit"] = self.settings["sourcelimit"]  # limit for current in voltage mode or for voltage in current mode (may not be used in single channel mode)
         s["sourcehighc"] = self.smu_settings["sourcehighc"]
 
-        s["drainnplc"] = self.settings["drainnplc"]  # drain NPLC (may not be used in single channel mode)
+        s["drainnplc"] = guardrail_nplc(self.settings["drainnplc"], freq)  # drain NPLC (may not be used in single channel mode)
         s["draindelay"] = True if self.settings["draindelaymode"] == "auto" else False  # stabilization time mode for source: may take values [True - Auto, False - manual]
         s["draindelayduration"] = self.settings["draindelay"]  # stabilization time duration if manual (may not be used in single channel mode)
         s["drainlimit"] = self.settings["drainlimit"]  # limit for current in voltage mode or for voltage in current mode (may not be used in single channel mode)
