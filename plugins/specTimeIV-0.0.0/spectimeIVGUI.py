@@ -851,14 +851,14 @@ class specTimeIVGUI:
         self.logger.log_debug("Running sequence step with postfix: " + postfix)
         self.settings["filename"] = self.settings["filename"] + postfix
 
-        status, state = function_dict["smu"][self.settings["smu"]]["smu_connect"]()
-        if status:
-            return [2, {"Error message": state}]
+        function_dict["smu"][self.settings["smu"]]["smu_connect"]()
+        # if status:
+        #    return [2, {"Error message": state}]
 
         self._sequenceImplementation()
-        status, state = function_dict["smu"][self.settings["smu"]]["smu_disconnect"]()
-        if status:
-            self.logger.log_warn(f"Error disconnecting SMU: {state}")
+        function_dict["smu"][self.settings["smu"]]["smu_disconnect"]()
+        # if status:
+        #    self.logger.log_warn(f"Error disconnecting SMU: {state}")
         return [0, {"message": "sweep finished"}]
 
     def _initialize_smu(self):
@@ -1084,6 +1084,7 @@ class specTimeIVGUI:
                 if (currentTime - startTic) >= self.settings["stopafter"] * 60:  # convert to sec from min
                     self.logger.log_debug("_timeIVimplementation: Stop timer reached, saving data and exiting.")
                     self._saveData(header, timeData, sourceI, sourceV, drainI, drainV)
+                    time.sleep(self.settings["timestep"])  # ensure the last data is saved before exiting
                     break
 
             # check if it is time to autosave
