@@ -132,7 +132,6 @@ class specTimeIVGUI:
         layout.addWidget(self.sc)
         self.MDIWidget.setLayout(layout)
 
-
     ########Functions
     ########GUI Slots
 
@@ -492,12 +491,12 @@ class specTimeIVGUI:
 
         self.settingsWidget.lineEdit_sourceSetValue.setText(plugin_info["sourcesetvalue"])
         self.settingsWidget.lineEdit_sourceLimit.setText(plugin_info["sourcelimit"])
-        self.settingsWidget.lineEdit_sourceNPLC.setText(plugin_info["sourcenplc"])
-        self.settingsWidget.lineEdit_sourceDelay.setText(plugin_info["sourcedelay"])
+        self.settingsWidget.lineEdit_sourceNPLC.setText(plugin_info["sourcenplc"] * 1000)
+        self.settingsWidget.lineEdit_sourceDelay.setText(plugin_info["sourcedelay"] * 1000)
         self.settingsWidget.lineEdit_drainSetValue.setText(plugin_info["drainsetvalue"])
         self.settingsWidget.lineEdit_drainLimit.setText(plugin_info["drainlimit"])
-        self.settingsWidget.lineEdit_drainNPLC.setText(plugin_info["drainnplc"])
-        self.settingsWidget.lineEdit_drainDelay.setText(plugin_info["draindelay"])
+        self.settingsWidget.lineEdit_drainNPLC.setText(plugin_info["drainnplc"] * 1000)
+        self.settingsWidget.lineEdit_drainDelay.setText(plugin_info["draindelay"] * 1000)
 
         # update to the correct GUI state
         self.set_running(False)
@@ -669,17 +668,16 @@ class specTimeIVGUI:
         """
         function_dict = self.dependency_manager.function_dict
         s = {}
+
         def guardrail_nplc(nplc_seconds, line_frequency):
             nplc = nplc_seconds * line_frequency
             if nplc > 25:
                 nplc = 25
                 print(f"NPLC value is too high, setting to 25 PLC to avoid errors. NPLC was set to {nplc_seconds} seconds, which corresponds to {nplc} PLC at line frequency {line_frequency} Hz.")
             return nplc
-        
+
         freq = self.smu_settings["lineFrequency"]
-        
-        
-        
+
         # THIS IS MISSING SOURCE VALUE ak start and end
         s["pulse"] = False
         s["source"] = self.settings["channel"]  # may take values depending on the channel names in smu, e.g. for Keithley 2612B [smua, smub]
