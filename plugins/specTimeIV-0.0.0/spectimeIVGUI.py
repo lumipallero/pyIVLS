@@ -858,7 +858,7 @@ class specTimeIVGUI:
         if status:
             self.logger.log_warn(f"Error connecting Spectrometer: {state}")
             return [2, {"Error message": state}]
-
+        print(status, state)
         # check what mode spectrometer is in for integration time
         auto_mode = self.spectrometer_settings["integrationtimetype"] == "auto"
         if auto_mode:
@@ -866,7 +866,7 @@ class specTimeIVGUI:
         # Get and set constant integration time for the measurement
         integration_time_setting = self.spectrometer_settings["integrationtime"]
         self.logger.log_debug(f"Setting constant integration time: {integration_time_setting}")
-
+        time.sleep(integration_time_setting + 1)  # Wait for the integration time to elapse before setting it
         status, state = function_dict["spectrometer"][spectrometer_name]["spectrometerSetIntegrationTime"](integration_time_setting)
         if status:
             self.logger.log_warn(f"Error setting integration time: {state}")
