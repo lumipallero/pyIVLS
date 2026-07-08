@@ -491,12 +491,12 @@ class specTimeIVGUI:
 
         self.settingsWidget.lineEdit_sourceSetValue.setText(plugin_info["sourcesetvalue"])
         self.settingsWidget.lineEdit_sourceLimit.setText(plugin_info["sourcelimit"])
-        self.settingsWidget.lineEdit_sourceNPLC.setText(plugin_info["sourcenplc"] * 1000)
-        self.settingsWidget.lineEdit_sourceDelay.setText(plugin_info["sourcedelay"] * 1000)
+        self.settingsWidget.lineEdit_sourceNPLC.setText(str(float(plugin_info["sourcenplc"]) * 1000))
+        self.settingsWidget.lineEdit_sourceDelay.setText(str(float(plugin_info["sourcedelay"]) * 1000))
         self.settingsWidget.lineEdit_drainSetValue.setText(plugin_info["drainsetvalue"])
         self.settingsWidget.lineEdit_drainLimit.setText(plugin_info["drainlimit"])
-        self.settingsWidget.lineEdit_drainNPLC.setText(plugin_info["drainnplc"] * 1000)
-        self.settingsWidget.lineEdit_drainDelay.setText(plugin_info["draindelay"] * 1000)
+        self.settingsWidget.lineEdit_drainNPLC.setText(str(float(plugin_info["drainnplc"]) * 1000))
+        self.settingsWidget.lineEdit_drainDelay.setText(str(float(plugin_info["draindelay"]) * 1000))
 
         # update to the correct GUI state
         self.set_running(False)
