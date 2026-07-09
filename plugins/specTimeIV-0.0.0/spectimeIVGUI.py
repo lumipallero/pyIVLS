@@ -17,13 +17,65 @@ from PyQt6 import uic
 from PyQt6.QtWidgets import QVBoxLayout, QFileDialog, QWidget
 from MplCanvas import MplCanvas  # this should be moved to some pluginsShare
 from threadStopped import thread_with_exception, ThreadStopped
-from plugin_components import LoggingHelper, FileManager, DataOrder, PluginException, DependencyManager
+from plugin_components import LoggingHelper, FileManager, DataOrder, PluginException, DependencyManager, load_widget
 import PyQt6.QtCore as Qt
-
+from typing import Any
 import pandas as pd
+
+from typing import Annotated, Literal
+from annotated_types import Gt, Lt, Le, Ge
+from pydantic import BaseModel
+
+
+class SpecTimeIVSettings(BaseModel):
+    timestep: float
+    stoptimer: bool
+    stopafter: float
+    address: str
+    filename: str
+    comment: str
+    samplename: str
+    autosave: bool
+    autosaveinterval: float
+    singlechannel: bool
+    channel: str
+    inject: Literal["current", "voltage"]
+    sourcesensemode: Literal["2 wire", "4 wire", "2 & 4 wire"]
+    sourcedelaymode: Literal["auto", "manual"]
+    sourcesetvalue: float
+    sourcelimit: Annotated[float, Gt(0)]
+    sourcenplc: Annotated[float, Gt(0)]
+    sourcedelay: Annotated[float, Gt(0)]
+    draininject: Literal["current", "voltage"]
+    drainsensemode: Literal["2 wire", "4 wire", "2 & 4 wire"]
+    draindelaymode: Literal["auto", "manual"]
+    drainsetvalue: float
+    drainlimit: Annotated[float, Gt(0)]
+    drainnplc: Annotated[float, Gt(0)]
+    draindelay: Annotated[float, Gt(0)]
+    smu: str
+    spectrometer: str
 
 
 class specTimeIVGUI:
+    @property
+    def settingsWidget(self) -> Any:
+        # typecast to Any to avoid unkown attribute nuisance errors when accessing the widget.
+        if not hasattr(self, "_settingsWidget"):
+            raise NotImplementedError("Settings widget not implemented, remove this function if settings widget is not needed.")
+        if self._settingsWidget is None:
+            raise RuntimeError("Settings widget not initialized.")
+        return self._settingsWidget
+
+    @property
+    def MDIWidget(self) -> Any:
+        # typecast to Any to avoid unkown attribute nuisance errors when accessing the widget.
+        if not hasattr(self, "_mdiWidget"):
+            raise NotImplementedError("MDI widget not implemented, remove this function if MDI widget is not needed.")
+        if self._mdiWidget is None:
+            raise RuntimeError("MDI widget not initialized.")
+        return self._mdiWidget
+
     # public and nonpublic methods
     non_public_methods = []  # add function names here, if they should not be exported as public to another plugins
 
@@ -68,9 +120,9 @@ class specTimeIVGUI:
 
         # Load the settings based on the name of this file.
         self.path = os.path.dirname(__file__) + os.path.sep
+        print(f"Loading GUI for {self.__class__.__name__} from path: {self.path}")
 
-        self.settingsWidget: QWidget = uic.loadUi(self.path + "specTimeIV.ui")
-        self.MDIWidget: QWidget = uic.loadUi(self.path + "specTimeIV_MDIWidget.ui")
+        self._settingsWidget, self._mdiWidget = load_widget(settings=True, mdi=True, path=self.path)
 
         # stop yelling at me linter
         assert self.settingsWidget is not None, "Failed to load settingsWidget UI"
@@ -86,8 +138,10 @@ class specTimeIVGUI:
             plugin_name=self.__class__.__name__,
             dependencies=self.dependency,
         )
+        self._connect_signals()
 
     def _connect_signals(self):
+        self.logger.log_debug("Connecting GUI signals to slots")
         self.settingsWidget.directoryButton.clicked.connect(self._getAddress)
         self.settingsWidget.stopButton.clicked.connect(self._stopAction)
         self.settingsWidget.runButton.clicked.connect(self._runAction)
@@ -425,6 +479,9 @@ class specTimeIVGUI:
         self,
         plugin_info,
     ):
+        # test validation of settings briefly:
+        m = SpecTimeIVSettings.model_validate(plugin_info)
+        print("Settings validated successfully:", m)
         ##settings are not initialized here, only GUI
         ## i.e. no settings checks are here. Practically it means that anything may be used for initialization (var types still should be checked), but functions should not work if settings are not OK
         self.logger.log_debug("Initializing GUI with plugin_info: " + str(plugin_info))
@@ -500,7 +557,6 @@ class specTimeIVGUI:
 
         # update to the correct GUI state
         self.set_running(False)
-        self._connect_signals()
         self._update_GUI_state()
 
     def _getAddress(self):
@@ -561,7 +617,7 @@ class specTimeIVGUI:
         """Changes the unit labels based on the selected injection type."""
 
         inject_type = self.settingsWidget.comboBox_inject.currentText()
-        if inject_type == "Voltage":
+        if inject_type == "voltage":
             self.settingsWidget.label_sourceSetValue.setText("U")
             self.settingsWidget.label_sourceSetValueUnits.setText("V")
             self.settingsWidget.label_sourceLimitUnits.setText("A")
@@ -574,7 +630,7 @@ class specTimeIVGUI:
         """Changes the unit labels based on the selected injection type."""
 
         inject_type = self.settingsWidget.comboBox_drainInject.currentText()
-        if inject_type == "Voltage":
+        if inject_type == "voltage":
             self.settingsWidget.label_drainSetValue.setText("U")
             self.settingsWidget.label_drainSetValueUnits.setText("V")
             self.settingsWidget.label_drainLimitUnits.setText("A")
