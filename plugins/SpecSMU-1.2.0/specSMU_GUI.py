@@ -578,6 +578,11 @@ class specSMU_GUI(QWidget):
         s["limit"] = self.settings["limit"]  # limit for current in voltage mode or for voltage in current mode (may not be used in single channel mode)
         s["sourcehighc"] = self.smu_settings["sourcehighc"]
 
+        s["drainnplc"] = self.settings["nplc"] * self.smu_settings["lineFrequency"]  # see page 552 of Keithley manual: 1 PLC = 20 ms for 50 Hz (nplc = time [s] * freq [Hz])
+        s["drainvalue"] = self.settings["drainvalue"] if "drainvalue" in self.settings else 0
+        s["drainlimit"] = self.settings["drainlimit"] if "drainlimit" in self.settings else 0.01
+        s["draindelay"] = True if self.settings["sourcedelaymode"] == "auto" else False  # stabilization time mode for drain: may take values [True - Auto, False - manual]
+
         s["start"] = self.settings["start"]  # start value for source, added for current injection to work
         s["end"] = self.settings["end"]  # end value for source -||-
         s["points"] = self.settings["points"]  # number of points for source -||-
@@ -591,8 +596,10 @@ class specSMU_GUI(QWidget):
         s["sourcedelayfactor"] = self.smu_settings["sourcedelayfactor"]
         if self.settings["sourcesensemode"] == "4 wire":
             s["sourcesense"] = True  # source sence mode: may take values [True - 4 wire, False - 2 wire]
+            s["drainsense"] = True  # drain sence mode: may take values [True - 4 wire, False - 2 wire]
         else:
             s["sourcesense"] = False  # source sence mode: may take values [True - 4 wire, False - 2 wire]
+            s["drainsense"] = False  # drain sence mode: may take values [True - 4 wire, False - 2 wire]
         self._log_verbose(f"SMU settings: {s}")
 
         if self.smu_settings["sourcefiltertype"] == "Repeat average":
@@ -602,6 +609,13 @@ class specSMU_GUI(QWidget):
             s["sourcefiltertype"] = "FILTER_OFF"
 
         s["sourcedelayfactor"] = self.smu_settings["sourcedelayfactor"]
+
+        if self.smu_settings["drainfiltertype"] == "Repeat average":
+            s["drainfiltertype"] = "FILTER_REPEAT_AVG"
+            s["drainfiltervalue"] = self.smu_settings["drainfiltervalue"]
+        else:
+            s["drainfiltertype"] = "FILTER_OFF"
+        s["draindelayfactor"] = self.smu_settings["draindelayfactor"]
 
         if not s["single_ch"]:
             self._log_verbose("Dual channel mode not implemented")
@@ -657,6 +671,8 @@ class specSMU_GUI(QWidget):
             smuChange = 0
         specFilename = self.spectrometer_settings["filename"]
         repeat = self.settings["repeat"]
+        if not self.settings["singlechannel"]:
+            self.function_dict["smu"][smu_name]["smu_setOutput"](self.settings["drainchannel"], "v" if self.settings["inject"] == "voltage" else "i", self.settings["drainvalue"])
         for rep in range(repeat):
             self._log_verbose(f"Starting repeat {rep + 1} of {repeat}")
             # iterate over the SMU loop steps
@@ -749,6 +765,8 @@ class specSMU_GUI(QWidget):
 
                 if not self.settings["mode"] == "hw trigger":
                     # integration time set, smu ready, spectrometer ready:
+                    if not self.settings["singlechannel"]:
+                        self.function_dict["smu"][smu_name]["smu_outputON"](self.settings["drainchannel"])  # output on for drain
                     self.function_dict["smu"][smu_name]["smu_outputON"](self.settings["channel"])  # output on
 
                     # pause before any measurements if spectro_pause is set
@@ -762,6 +780,8 @@ class specSMU_GUI(QWidget):
                     if after_flag:
                         # IV before spectrum
                         status, sourceIV_before = self.function_dict["smu"][smu_name]["smu_getIV"](self.settings["channel"])
+                        if not self.settings["singlechannel"]:
+                            status, drainIV_before = self.function_dict["smu"][smu_name]["smu_getIV"](self.settings["drainchannel"])
 
                     # spectrum
                     status, spectrum = self.function_dict["spectrometer"][spectro_name]["spectrometerGetScan"]()
@@ -771,6 +791,8 @@ class specSMU_GUI(QWidget):
 
                     # IV after spectrum
                     status, sourceIV_after = self.function_dict["smu"][smu_name]["smu_getIV"](self.settings["channel"])
+                    if not self.settings["singlechannel"]:
+                        status, drainIV_after = self.function_dict["smu"][smu_name]["smu_getIV"](self.settings["drainchannel"])
                     time.sleep(0.02)
                 # HW trig mode
                 else:
@@ -820,9 +842,16 @@ class specSMU_GUI(QWidget):
                         i_before, v_before = sourceIV_before
                         i_after, v_after = sourceIV_after
                         readings = str(i_before) + "," + str(v_before) + "," + str(i_after) + "," + str(v_after)
+                        if not (self.settings["singlechannel"]):
+                            i_before_drain, v_before_drain = drainIV_before
+                            i_after_drain, v_after_drain = drainIV_after
+                            readings += "," + str(i_before_drain) + "," + str(v_before_drain) + "," + str(i_after_drain) + "," + str(v_after_drain)
                     else:
                         i_after, v_after = sourceIV_after
                         readings = str(i_after) + "," + str(v_after)
+                        if not (self.settings["singlechannel"]):
+                            i_after_drain, v_after_drain = drainIV_after
+                            readings += "," + str(i_after_drain) + "," + str(v_after_drain)
 
                 varDict["comment"] = self.spectrometer_settings["comment"] + " " + readings
                 address = self.spectrometer_settings["address"] + os.sep + self.spectrometer_settings["filename"]
