@@ -577,7 +577,7 @@ class specSMU_GUI(QWidget):
         s["delayduration"] = self.settings["delay"]  # stabilization time duration if manual (may not be used in single channel mode)
         s["limit"] = self.settings["limit"]  # limit for current in voltage mode or for voltage in current mode (may not be used in single channel mode)
         s["sourcehighc"] = self.smu_settings["sourcehighc"]
-
+        s["drainhighc"] = self.smu_settings["drainhighc"]
         s["drainnplc"] = self.settings["nplc"] * self.smu_settings["lineFrequency"]  # see page 552 of Keithley manual: 1 PLC = 20 ms for 50 Hz (nplc = time [s] * freq [Hz])
         s["drainvalue"] = self.settings["drainvalue"] if "drainvalue" in self.settings else 0
         s["drainlimit"] = self.settings["drainlimit"] if "drainlimit" in self.settings else 0.01
