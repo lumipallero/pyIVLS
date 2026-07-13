@@ -581,7 +581,7 @@ class specSMU_GUI(QWidget):
         s["drainnplc"] = self.settings["nplc"] * self.smu_settings["lineFrequency"]  # see page 552 of Keithley manual: 1 PLC = 20 ms for 50 Hz (nplc = time [s] * freq [Hz])
         s["drainvalue"] = self.settings["drainvalue"] if "drainvalue" in self.settings else 0
         s["drainlimit"] = self.settings["drainlimit"] if "drainlimit" in self.settings else 0.01
-        s["draindelay"] = True if self.settings["sourcedelaymode"] == "auto" else False  # stabilization time mode for drain: may take values [True - Auto, False - manual]
+        s["draindelay"] = True if self.settings["delaymode"] == "auto" else False  # stabilization time mode for drain: may take values [True - Auto, False - manual]
 
         s["start"] = self.settings["start"]  # start value for source, added for current injection to work
         s["end"] = self.settings["end"]  # end value for source -||-
