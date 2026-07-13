@@ -582,7 +582,7 @@ class specSMU_GUI(QWidget):
         s["drainvalue"] = self.settings["drainvalue"] if "drainvalue" in self.settings else 0
         s["drainlimit"] = self.settings["drainlimit"] if "drainlimit" in self.settings else 0.01
         s["draindelay"] = True if self.settings["delaymode"] == "auto" else False  # stabilization time mode for drain: may take values [True - Auto, False - manual]
-
+        s["draindelayduration"] = self.settings["delay"]  # stabilization time duration if manual (may not be used in single channel mode)
         s["start"] = self.settings["start"]  # start value for source, added for current injection to work
         s["end"] = self.settings["end"]  # end value for source -||-
         s["points"] = self.settings["points"]  # number of points for source -||-
@@ -675,6 +675,7 @@ class specSMU_GUI(QWidget):
             for smuLoopStep in range(smuLoop):
                 smuSetValue = self.settings["start"] + smuLoopStep * smuChange
                 print(f"SMU set value: {smuSetValue}")
+                print(self.settings["inject"])
                 self._log_verbose(f"Setting SMU output to {smuSetValue}")
                 # set output on SMU
                 self.function_dict["smu"][smu_name]["smu_setOutput"](self.settings["channel"], "v" if self.settings["inject"] == "voltage" else "i", smuSetValue)
