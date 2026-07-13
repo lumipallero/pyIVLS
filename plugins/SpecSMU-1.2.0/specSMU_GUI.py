@@ -617,10 +617,6 @@ class specSMU_GUI(QWidget):
             s["drainfiltertype"] = "FILTER_OFF"
         s["draindelayfactor"] = self.smu_settings["draindelayfactor"]
 
-        if not s["single_ch"]:
-            self._log_verbose("Dual channel mode not implemented")
-            return [1, {"Error message": "SpecSMU plugin: dual channel mode not implemented"}]
-
         if self.function_dict["smu"][self.settings["smu"]]["smu_init"](s):
             self._log_verbose("Error initializing SMU")
             return [2, {"Error message": "SpecSMU plugin: error in SMU plugin can not initialize"}]
