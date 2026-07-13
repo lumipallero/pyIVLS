@@ -538,6 +538,7 @@ class specSMU_GUI(QWidget):
         self._log_verbose(f"SMU: {smu_name}, Spectrometer: {spectro_name}")
 
         [status, message] = self.function_dict["smu"][smu_name]["smu_connect"]()
+        print(self.settings["limit"])
         if status:
             self._log_verbose(f"Error connecting SMU: {message}")
             return [status, message]
@@ -679,7 +680,7 @@ class specSMU_GUI(QWidget):
                 self._log_verbose(f"Setting SMU output to {smuSetValue}")
                 # set output on SMU
                 self.function_dict["smu"][smu_name]["smu_setOutput"](self.settings["channel"], "v" if self.settings["inject"] == "voltage" else "i", smuSetValue)
-                
+
                 self._log_verbose("SMU output set")
 
                 # set filename
