@@ -668,7 +668,7 @@ class specSMU_GUI(QWidget):
         specFilename = self.spectrometer_settings["filename"]
         repeat = self.settings["repeat"]
         if not self.settings["singlechannel"]:
-            self.function_dict["smu"][smu_name]["smu_setOutput"](self.settings["drainchannel"], "v" if self.settings["inject"] == "voltage" else "i", self.settings["drainvalue"])
+            self.function_dict["smu"][smu_name]["smu_setOutput"](self.settings["drainchannel"], "v", self.settings["drainvalue"])
         for rep in range(repeat):
             self._log_verbose(f"Starting repeat {rep + 1} of {repeat}")
             # iterate over the SMU loop steps
