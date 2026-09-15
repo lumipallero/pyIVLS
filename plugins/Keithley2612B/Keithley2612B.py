@@ -914,9 +914,12 @@ class Keithley2612B:
             "Helper function for getting ceil to the injected current in current injection mode"
             if x == 0:
                 return 0
-            power = math.ceil(math.log10(abs(x)))
+            power = math.floor(math.log10(abs(x)))
             # factor = 10**power
-            return power
+            if power < 0:
+                return power
+            else:
+                return 0
 
         timer_n = int(s["pulsetime"] / (s["nplcms"] / 1000))  # number of timers needed to cover the pulse duration, rounded up
 
