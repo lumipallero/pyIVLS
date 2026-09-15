@@ -914,9 +914,9 @@ class Keithley2612B:
             "Helper function for getting ceil to the injected current in current injection mode"
             if x == 0:
                 return 0
-            power = math.floor(math.log10(abs(x)))
-            factor = 10**power
-            return math.ceil(x / factor) * factor
+            power = math.ceil(math.log10(abs(x)))
+            # factor = 10**power
+            return power
 
         timer_n = int(s["pulsetime"] / (s["nplcms"] / 1000))  # number of timers needed to cover the pulse duration, rounded up
 
@@ -984,7 +984,7 @@ class Keithley2612B:
                     self.safewrite(f"{s['source']}.trigger.source.limitv = {s['limit']}")
                     self.safewrite(f"{s['source']}.measure.autorangei = {s['source']}.AUTORANGE_OFF")  # see p. 585 of Keithley manual
                     self.safewrite(f"{s['source']}.measure.autorangev = {s['source']}.AUTORANGE_OFF")  # see p. 585 of Keithley manual
-                    self.safewrite(f"{s['source']}.source.rangei = {ceil_to_power_of_10(s['value'])}")
+                    self.safewrite(f"{s['source']}.source.rangei = 1e{ceil_to_power_of_10(s['value'])}")
                     self.safewrite(f"{s['source']}.measure.rangev = {(s['limit'])}")
                     self.safewrite(f"{s['source']}.measure.nplc = {s['sourcenplc']}")
                     self.safewrite(f"display.{s['source']}.measure.func = display.MEASURE_DCVOLTS")
