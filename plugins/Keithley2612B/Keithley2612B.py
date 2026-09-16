@@ -917,7 +917,7 @@ class Keithley2612B:
             power = math.floor(math.log10(abs(x)))
             # factor = 10**power
             if power < 0:
-                return power
+                return power + 1    
             else:
                 return 0
 
