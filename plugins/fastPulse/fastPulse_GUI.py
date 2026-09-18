@@ -603,10 +603,7 @@ class fastPulse_GUI(QWidget):
         smu_name = self.settings["smu"]
         smuLoop = self.settings["points"]
         if smuLoop > 1:
-            if self.settings["inject"] == "v":
-                smuChange = (self.settings["end"] - self.settings["start"]) / (smuLoop - 1)
-            else:
-                smuChange = (np.log10(self.settings["end"]) - np.log10(self.settings["start"])) / (smuLoop - 1)
+            smuChange = (self.settings["end"] - self.settings["start"]) / (smuLoop - 1)
         else:
             smuChange = 0
         Filename = self.settings["filename"]
@@ -617,10 +614,7 @@ class fastPulse_GUI(QWidget):
             self._log_verbose(f"Starting repeat {rep + 1} of {repeat}")
             # iterate over the SMU loop steps
             for smuLoopStep in range(smuLoop):
-                if self.settings["inject"] == "v":
-                    smuSetValue = self.settings["start"] + smuLoopStep * smuChange
-                else:
-                    smuSetValue = 10 ** (np.log10(self.settings["start"]) + smuLoopStep * smuChange)
+                smuSetValue = self.settings["start"] + smuLoopStep * smuChange
                 print(f"SMU set value: {smuSetValue}")
                 print(self.settings["inject"])
                 self._log_verbose(f"Setting SMU output to {smuSetValue}")

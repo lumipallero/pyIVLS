@@ -629,7 +629,12 @@ class Keithley2612B:
                 # see trigger models on pp 3-35-36 (172-173) of the manual
                 self.safewrite(f"{s['source']}.trigger.count = {s['steps']}")
                 self.safewrite(f"{s['source']}.trigger.arm.count = {s['repeat']}")
-                self.safewrite(f"{s['source']}.trigger.source.linear{s['type']}({s['start']},{s['end']},{s['steps']})")
+                if s["type"] == "v":
+                    self.safewrite(f"{s['source']}.source.func = {s['source']}.OUTPUT_DCVOLTS")
+                    self.safewrite(f"{s['source']}.trigger.source.linear{s['type']}({s['start']},{s['end']},{s['steps']})")
+                else:
+                    self.safewrite(f"{s['source']}.source.func = {s['source']}.OUTPUT_DCAMPS")
+                    self.safewrite(f"{s['source']}.trigger.source.log{s['type']}({s['start']},{s['end']},{s['steps']})")
 
                 #### initialize actions for sweep (see trigger models on pp 3-35-36 (172-173) of the manual)
                 self.safewrite(f"{s['source']}.trigger.measure.iv({s['source']}.nvbuffer1, {s['source']}.nvbuffer2)")
@@ -917,7 +922,7 @@ class Keithley2612B:
             power = math.floor(math.log10(abs(x)))
             # factor = 10**power
             if power < 0:
-                return power + 1    
+                return power + 1
             else:
                 return 0
 
